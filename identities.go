@@ -4,25 +4,24 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"os"
 )
 
 type list struct {
 	Name string
 }
 
-func (l list) Help() string {
-	return MakeHelp(l.Name, nil, "")
+func (l list) Help(processedArgs []string, args []string) string {
+	return MakeHelp(nil, processedArgs, args, "")
 }
 
-func (l list) ValidateArgs() bool {
-	if len(os.Args) != 3 {
+func (l list) ValidateArgs(processedArgs []string, args []string) bool {
+	if len(args) != 0 {
 		return false
 	}
 	return true
 }
 
-func (l list) Exec(uri string) error {
+func (l list) Exec(unused string, processedArgs []string, args []string) error {
 	configs := GetConf()
 	fmt.Println("Identities:")
 	for k, _ := range configs {
@@ -50,23 +49,23 @@ func (a add) GetParser() *flag.FlagSet {
 	return mySet
 }
 
-func (a add) Help() string {
+func (a add) Help(processedArgs []string, args []string) string {
 	mySet := a.GetParser()
 	s := ""
 	mySet.VisitAll(func(f *flag.Flag) {
 		s += "[--" + f.Name + " " + f.Usage + "] "
 	})
 	s += " <id>"
-	return MakeHelp(a.Name, nil, s)
+	return MakeHelp(nil, processedArgs, args, s)
 }
 
-func (a add) ValidateArgs() bool {
-	if len(os.Args) < 3 {
+func (a add) ValidateArgs(processedArgs []string, args []string) bool {
+	if len(args) < 4 {
 		return false
 	}
 
 	mySet := a.GetParser()
-	mySet.Parse(os.Args[3:])
+	mySet.Parse(args)
 
 	if len(mySet.Args()) != 1 {
 		return false
@@ -75,13 +74,13 @@ func (a add) ValidateArgs() bool {
 	return true
 }
 
-func (a add) Exec(unused string) error {
+func (a add) Exec(unused string, processedArgs []string, args []string) error {
 	mySet := a.GetParser()
-	mySet.Parse(os.Args[3:])
+	mySet.Parse(args)
 
 	configs := GetConf()
 	if len(mySet.Args()) != 1 {
-		log.Fatal(a.Help())
+		log.Fatal(a.Help(processedArgs, args))
 	}
 	id := mySet.Args()[0]
 	for k, _ := range configs {
@@ -118,23 +117,23 @@ func (a add) Exec(unused string) error {
 }
 
 type show struct {
-	Name string
 }
 
-func (s show) Help() string {
-	return MakeHelp(s.Name, nil, "<id>")
+func (s show) Help(processedArgs []string, args []string) string {
+	return MakeHelp(nil, processedArgs, args, "<id>")
 }
 
-func (s show) ValidateArgs() bool {
-	if len(os.Args) != 4 {
+func (s show) ValidateArgs(processedArgs []string, args []string) bool {
+	if len(args) != 1 {
 		return false
 	}
 
-	id := os.Args[3]
+	id := args[0]
 
 	configs := GetConf()
 	for k, _ := range configs {
 		if k == id {
+			log.Fatal("Identity not present in config")
 			return true
 		}
 	}
@@ -142,8 +141,8 @@ func (s show) ValidateArgs() bool {
 	return false
 }
 
-func (s show) Exec(unused string) error {
-	id := os.Args[3]
+func (s show) Exec(unused string, processedArgs []string, args []string) error {
+	id := args[0]
 
 	configs := GetConf()
 
@@ -172,16 +171,16 @@ type del struct {
 	Name string
 }
 
-func (d del) Help() string {
-	return MakeHelp(d.Name, nil, "<id>")
+func (d del) Help(processedArgs []string, args []string) string {
+	return MakeHelp(nil, processedArgs, args, "<id>")
 }
 
-func (d del) ValidateArgs() bool {
-	if len(os.Args) != 4 {
+func (d del) ValidateArgs(processedArgs []string, args []string) bool {
+	if len(args) != 1 {
 		return false
 	}
 
-	id := os.Args[3]
+	id := args[0]
 
 	configs := GetConf()
 	for k, _ := range configs {
@@ -193,8 +192,8 @@ func (d del) ValidateArgs() bool {
 	return false
 }
 
-func (d del) Exec(unused string) error {
-	id := os.Args[3]
+func (d del) Exec(unused string, processedArgs []string, args []string) error {
+	id := args[0]
 
 	configs := GetConf()
 
@@ -215,30 +214,30 @@ type identities struct {
 	Commands map[string]command
 }
 
-func (i identities) Help() string {
-	return MakeHelp(i.Name, i.Commands, "")
+func (i identities) Help(processedArgs []string, args []string) string {
+	return MakeHelp(i.Commands, processedArgs, args, "")
 }
 
-func (i identities) ValidateArgs() bool {
-	if len(os.Args) < 3 {
+func (i identities) ValidateArgs(processedArgs []string, args []string) bool {
+	if len(args) < 1 {
 		return false
 	}
 	found := false
 	for k, _ := range i.Commands {
-		if os.Args[2] == k {
+		if args[0] == k {
 			found = true
 		}
 	}
 	return found
 }
 
-func (i identities) Exec(unused string) error {
+func (i identities) Exec(unused string, processedArgs []string, args []string) error {
 	for k, v := range i.Commands {
-		if os.Args[2] == k {
-			if !v.ValidateArgs() {
-				log.Fatal(v.Help())
+		if args[0] == k {
+			if !v.ValidateArgs(append(processedArgs, args[0]), args[1:]) {
+				log.Fatal(v.Help(append(processedArgs, args[0]), args[1:]))
 			}
-			return v.Exec(unused)
+			return v.Exec(unused, append(processedArgs, args[0]), args[1:])
 		}
 	}
 
@@ -254,9 +253,7 @@ var i identities = identities{
 		"delete": del{
 			"identities delete",
 		},
-		"show": show{
-			"identities show",
-		},
+		"show": show{},
 		"list": list{
 			"identities list",
 		},

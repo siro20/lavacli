@@ -3,20 +3,19 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
-	"os/user"
-	"path/filepath"
 	"strings"
 
 	"alexejk.io/go-xmlrpc"
-	"gopkg.in/yaml.v2"
 )
 
-func MakeHelp(name string, cmds map[string]command, optarg string) string {
-	s := "usage: " + os.Args[0] + " " + name
+func MakeHelp(cmds map[string]command, processedArgs []string, args []string, optarg string) string {
+	s := "usage: "
+	for _, k := range processedArgs {
+		s += k + " "
+	}
 	if cmds != nil {
 		s += ": {"
 	}
@@ -35,24 +34,27 @@ func MakeHelp(name string, cmds map[string]command, optarg string) string {
 }
 
 type command interface {
-	Exec(string) error
-	ValidateArgs() bool
-	Help() string
+	Exec(uri string, processedArgs []string, args []string) error
+	ValidateArgs(processedArgs []string, args []string) bool
+	Help(processedArgs []string, args []string) string
 }
 
 type rect struct {
 	width, height float64
 }
 
-func (r rect) Help() string {
+func (r rect) Help(processedArgs []string, args []string) string {
 	return ""
 }
 
-func (r rect) ValidateArgs() bool {
+func (r rect) ValidateArgs(processedArgs []string, args []string) bool {
 	return true
 }
-func (r rect) Exec(uri string) error {
+
+func (r rect) Exec(uri string, processedArgs []string, args []string) error {
 	log.Println(uri)
+	log.Println(processedArgs)
+	log.Println(args)
 	return nil
 }
 
@@ -72,66 +74,9 @@ var commands map[string]command = map[string]command{
 	"workers":      r,
 }
 
-func printHelp() {
-	s := "Help:\n" + MakeHelp("", commands, "")
+func printHelp(processedArgs []string, args []string) {
+	s := "Help:\n" + MakeHelp(commands, processedArgs, args, "[--identity IDENTITY] [--uri URI]")
 	log.Fatal(s)
-}
-
-type configIndentity struct {
-	Token    string `yaml:"token,omitempty"`
-	Uri      string `yaml:"uri,omitempty"`
-	Username string `yaml:"username,omitempty"`
-	Proxy    string `yaml:"proxy,omitempty"`
-}
-
-func GetConf() map[string]configIndentity {
-	var c map[string]configIndentity
-
-	path := os.Getenv("XDG_CONFIG_HOME")
-	if path == "" {
-		usr, _ := user.Current()
-		path = usr.HomeDir + "/.config"
-	}
-
-	path += "/lavacli.yaml"
-	path, err := filepath.Abs(path)
-	if err != nil {
-		log.Fatalf("Failed to resolv path: #%v ", err)
-	}
-	yamlFile, err := ioutil.ReadFile(path)
-	if err != nil {
-		log.Fatalf("Failed to read file: #%v ", err)
-	}
-	err = yaml.Unmarshal(yamlFile, &c)
-	if err != nil {
-		log.Fatalf("Unmarshal failed: %v", err)
-	}
-
-	return c
-}
-
-func SetConf(c map[string]configIndentity) {
-	path := os.Getenv("XDG_CONFIG_HOME")
-	if path == "" {
-		usr, _ := user.Current()
-		path = usr.HomeDir + "/.config"
-	}
-
-	path += "/lavacli.yaml"
-	path, err := filepath.Abs(path)
-	if err != nil {
-		log.Fatalf("Failed to resolv path: #%v ", err)
-	}
-
-	d, err := yaml.Marshal(&c)
-	if err != nil {
-		log.Fatalf("Failed to marshal config: %v", err)
-	}
-
-	err = ioutil.WriteFile(path, d, 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
 }
 
 func main() {
@@ -150,7 +95,7 @@ func main() {
 	}
 
 	if len(os.Args) < 2 {
-		printHelp()
+		printHelp([]string{os.Args[0]}, nil)
 	}
 	for k, v := range commands {
 		if k == os.Args[1] {
@@ -184,14 +129,15 @@ func main() {
 					u = c.Uri
 				}
 			}
-			if !v.ValidateArgs() {
-				log.Fatal(v.Help())
+			if !v.ValidateArgs([]string{os.Args[0], os.Args[1]}, os.Args[2:]) {
+				log.Fatal(v.Help([]string{os.Args[0], os.Args[1]}, os.Args[2:]))
 			}
-			v.Exec(u)
+			v.Exec(u, []string{os.Args[0], os.Args[1]}, os.Args[2:])
+
 			return
 		}
 	}
-	printHelp()
+	printHelp([]string{os.Args[0]}, nil)
 
 	result := &struct {
 		BugzillaVersion struct {
