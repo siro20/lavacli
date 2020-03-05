@@ -6,7 +6,6 @@ import (
 )
 
 type list struct {
-	Name string
 }
 
 func (l list) Help(processedArgs []string, args []string) string {
@@ -30,7 +29,6 @@ func (l list) Exec(unused string, processedArgs []string, args []string) error {
 }
 
 type add struct {
-	Name string
 }
 
 func (a add) GetParser() *flag.FlagSet {
@@ -166,7 +164,6 @@ func (s show) Exec(unused string, processedArgs []string, args []string) error {
 }
 
 type del struct {
-	Name string
 }
 
 func (d del) Help(processedArgs []string, args []string) string {
@@ -208,7 +205,6 @@ func (d del) Exec(unused string, processedArgs []string, args []string) error {
 }
 
 type identities struct {
-	Name     string
 	Commands map[string]command
 }
 
@@ -243,17 +239,10 @@ func (i identities) Exec(unused string, processedArgs []string, args []string) e
 }
 
 var i identities = identities{
-	"identities",
 	map[string]command{
-		"add": add{
-			"identities add",
-		},
-		"delete": del{
-			"identities delete",
-		},
-		"show": show{},
-		"list": list{
-			"identities list",
-		},
+		"add":    add{},
+		"delete": del{},
+		"show":   show{},
+		"list":   list{},
 	},
 }
