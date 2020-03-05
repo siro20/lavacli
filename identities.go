@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 )
 
 type list struct {
@@ -80,12 +79,12 @@ func (a add) Exec(unused string, processedArgs []string, args []string) error {
 
 	configs := GetConf()
 	if len(mySet.Args()) != 1 {
-		log.Fatal(a.Help(processedArgs, args))
+		return fmt.Errorf("%s", a.Help(processedArgs, args))
 	}
 	id := mySet.Args()[0]
 	for k, _ := range configs {
 		if k == id {
-			log.Fatalf("id %s is already in config", id)
+			return fmt.Errorf("id %s is already in config", id)
 		}
 	}
 
@@ -95,7 +94,7 @@ func (a add) Exec(unused string, processedArgs []string, args []string) error {
 	proxy := mySet.Lookup("proxy")
 
 	if uri == nil {
-		log.Fatal("Must specify URI")
+		return fmt.Errorf("Must specify URI")
 	}
 
 	var c configIndentity
@@ -133,7 +132,6 @@ func (s show) ValidateArgs(processedArgs []string, args []string) bool {
 	configs := GetConf()
 	for k, _ := range configs {
 		if k == id {
-			log.Fatal("Identity not present in config")
 			return true
 		}
 	}
@@ -235,7 +233,7 @@ func (i identities) Exec(unused string, processedArgs []string, args []string) e
 	for k, v := range i.Commands {
 		if args[0] == k {
 			if !v.ValidateArgs(append(processedArgs, args[0]), args[1:]) {
-				log.Fatal(v.Help(append(processedArgs, args[0]), args[1:]))
+				return fmt.Errorf("%s", v.Help(append(processedArgs, args[0]), args[1:]))
 			}
 			return v.Exec(unused, append(processedArgs, args[0]), args[1:])
 		}

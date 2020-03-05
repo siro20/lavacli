@@ -132,8 +132,10 @@ func main() {
 			if !v.ValidateArgs([]string{os.Args[0], os.Args[1]}, os.Args[2:]) {
 				log.Fatal(v.Help([]string{os.Args[0], os.Args[1]}, os.Args[2:]))
 			}
-			v.Exec(u, []string{os.Args[0], os.Args[1]}, os.Args[2:])
-
+			err := v.Exec(u, []string{os.Args[0], os.Args[1]}, os.Args[2:])
+			if err != nil {
+				log.Fatal(err)
+			}
 			return
 		}
 	}
