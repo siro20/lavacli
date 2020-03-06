@@ -3,6 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
+
+	"github.com/kolo/xmlrpc"
 )
 
 type list struct {
@@ -19,7 +21,7 @@ func (l list) ValidateArgs(processedArgs []string, args []string) bool {
 	return true
 }
 
-func (l list) Exec(unused string, processedArgs []string, args []string) error {
+func (l list) Exec(unused *xmlrpc.Client, processedArgs []string, args []string) error {
 	configs := GetConf()
 	fmt.Println("Identities:")
 	for k, _ := range configs {
@@ -71,7 +73,7 @@ func (a add) ValidateArgs(processedArgs []string, args []string) bool {
 	return true
 }
 
-func (a add) Exec(unused string, processedArgs []string, args []string) error {
+func (a add) Exec(unused *xmlrpc.Client, processedArgs []string, args []string) error {
 	mySet := a.GetParser()
 	mySet.Parse(args)
 
@@ -137,7 +139,7 @@ func (s show) ValidateArgs(processedArgs []string, args []string) bool {
 	return false
 }
 
-func (s show) Exec(unused string, processedArgs []string, args []string) error {
+func (s show) Exec(unused *xmlrpc.Client, processedArgs []string, args []string) error {
 	id := args[0]
 
 	configs := GetConf()
@@ -187,7 +189,7 @@ func (d del) ValidateArgs(processedArgs []string, args []string) bool {
 	return false
 }
 
-func (d del) Exec(unused string, processedArgs []string, args []string) error {
+func (d del) Exec(unused *xmlrpc.Client, processedArgs []string, args []string) error {
 	id := args[0]
 
 	configs := GetConf()
@@ -204,41 +206,7 @@ func (d del) Exec(unused string, processedArgs []string, args []string) error {
 	return nil
 }
 
-type identities struct {
-	Commands map[string]command
-}
-
-func (i identities) Help(processedArgs []string, args []string) string {
-	return MakeHelp(i.Commands, processedArgs, args, "")
-}
-
-func (i identities) ValidateArgs(processedArgs []string, args []string) bool {
-	if len(args) < 1 {
-		return false
-	}
-	found := false
-	for k, _ := range i.Commands {
-		if args[0] == k {
-			found = true
-		}
-	}
-	return found
-}
-
-func (i identities) Exec(unused string, processedArgs []string, args []string) error {
-	for k, v := range i.Commands {
-		if args[0] == k {
-			if !v.ValidateArgs(append(processedArgs, args[0]), args[1:]) {
-				return fmt.Errorf("%s", v.Help(append(processedArgs, args[0]), args[1:]))
-			}
-			return v.Exec(unused, append(processedArgs, args[0]), args[1:])
-		}
-	}
-
-	return fmt.Errorf("Internal error: Command not found")
-}
-
-var i identities = identities{
+var i group = group{
 	map[string]command{
 		"add":    add{},
 		"delete": del{},

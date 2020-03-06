@@ -4,11 +4,12 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"strings"
 
-	"alexejk.io/go-xmlrpc"
+	"github.com/kolo/xmlrpc"
 )
 
 func MakeHelp(cmds map[string]command, processedArgs []string, args []string, optarg string) string {
@@ -33,8 +34,42 @@ func MakeHelp(cmds map[string]command, processedArgs []string, args []string, op
 	return s
 }
 
+type group struct {
+	Commands map[string]command
+}
+
+func (g group) Help(processedArgs []string, args []string) string {
+	return MakeHelp(g.Commands, processedArgs, args, "")
+}
+
+func (g group) ValidateArgs(processedArgs []string, args []string) bool {
+	if len(args) < 1 {
+		return false
+	}
+	found := false
+	for k, _ := range g.Commands {
+		if args[0] == k {
+			found = true
+		}
+	}
+	return found
+}
+
+func (g group) Exec(con *xmlrpc.Client, processedArgs []string, args []string) error {
+	for k, v := range g.Commands {
+		if args[0] == k {
+			if !v.ValidateArgs(append(processedArgs, args[0]), args[1:]) {
+				return fmt.Errorf("%s", v.Help(append(processedArgs, args[0]), args[1:]))
+			}
+			return v.Exec(con, append(processedArgs, args[0]), args[1:])
+		}
+	}
+
+	return fmt.Errorf("Internal error: Command not found")
+}
+
 type command interface {
-	Exec(uri string, processedArgs []string, args []string) error
+	Exec(con *xmlrpc.Client, processedArgs []string, args []string) error
 	ValidateArgs(processedArgs []string, args []string) bool
 	Help(processedArgs []string, args []string) string
 }
@@ -51,8 +86,7 @@ func (r rect) ValidateArgs(processedArgs []string, args []string) bool {
 	return true
 }
 
-func (r rect) Exec(uri string, processedArgs []string, args []string) error {
-	log.Println(uri)
+func (r rect) Exec(con *xmlrpc.Client, processedArgs []string, args []string) error {
 	log.Println(processedArgs)
 	log.Println(args)
 	return nil
@@ -74,14 +108,30 @@ var commands map[string]command = map[string]command{
 	"workers":      r,
 }
 
+func getXMLRPCClient(uri string, proxy string) (*xmlrpc.Client, error) {
+	tr := http.Transport{}
+
+	if proxy != "" {
+		u, err := url.Parse(proxy)
+		if err != nil {
+			return nil, err
+		}
+		tr.Proxy = http.ProxyURL(u)
+	}
+
+	client, err := xmlrpc.NewClient(uri, &tr)
+	if err != nil {
+		return nil, err
+	}
+	return client, nil
+}
+
 func printHelp(processedArgs []string, args []string) {
 	s := "Help:\n" + MakeHelp(commands, processedArgs, args, "[--identity IDENTITY] [--uri URI]")
 	log.Fatal(s)
 }
 
 func main() {
-	client, _ := xmlrpc.NewClient("https://bugzilla.mozilla.org/xmlrpc.cgi")
-
 	identity := flag.String("identity", "default", "identity stored in the configuration")
 	uri := flag.String("uri", "", "URI of the lava-server RPC endpoint")
 
@@ -101,6 +151,7 @@ func main() {
 		if k == os.Args[1] {
 			var c configIndentity
 			var u string
+			var con *xmlrpc.Client
 			u = *uri
 			if k != "identities" {
 				configs := GetConf()
@@ -128,11 +179,36 @@ func main() {
 				} else if c.Uri != "" {
 					u = c.Uri
 				}
+				con, err := getXMLRPCClient(u, c.Proxy)
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				type LavaJobState struct {
+					Description    string `xmlrpc:"description"`
+					State          string `xmlrpc:"state"`
+					ID             int    `xmlrpc:"id"`
+					EndTime        string `xmlrpc:"end_time"`
+					SubmitTime     string `xmlrpc:"submit_time"`
+					FailureComment string `xmlrpc:"failure_comment"`
+					Status         int    `xmlrpc:"status"`
+					HealthCheck    string `xmlrpc:"health_check"`
+				}
+				result := struct {
+					Jobs []LavaJobState `xmlrpc:""`
+				}{}
+				var result2 interface{}
+
+				err = con.Call("scheduler.all_devices", nil, &result2)
+				log.Printf("%v\n", err)
+				log.Printf("%v\n", result2)
+
+				log.Printf("%v\n", result)
 			}
 			if !v.ValidateArgs([]string{os.Args[0], os.Args[1]}, os.Args[2:]) {
 				log.Fatal(v.Help([]string{os.Args[0], os.Args[1]}, os.Args[2:]))
 			}
-			err := v.Exec(u, []string{os.Args[0], os.Args[1]}, os.Args[2:])
+			err := v.Exec(con, []string{os.Args[0], os.Args[1]}, os.Args[2:])
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -141,12 +217,4 @@ func main() {
 	}
 	printHelp([]string{os.Args[0]}, nil)
 
-	result := &struct {
-		BugzillaVersion struct {
-			Version string
-		}
-	}{}
-
-	_ = client.Call("Bugzilla.version", nil, result)
-	fmt.Printf("Version: %s\n", result.BugzillaVersion.Version)
 }
