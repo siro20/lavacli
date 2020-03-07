@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -71,6 +73,35 @@ func LavaJobsDefinition(con *xmlrpc.Client, id int) (LavaJobDefintion, error) {
 	err := con.Call("scheduler.jobs.definition", id, &ret)
 	if err != nil {
 		return ret, err
+	}
+
+	return ret, nil
+}
+
+type LavaJobErrors map[string]interface{}
+
+func LavaJobsValidate(con *xmlrpc.Client, def string, strict bool) (LavaJobErrors, error) {
+	var ret LavaJobErrors
+	var args []interface{}
+	args = append(args, def)
+	args = append(args, strict)
+
+	err := con.Call("scheduler.jobs.validate", args, &ret)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret, nil
+}
+
+type LavaJobIDs []int
+
+func LavaJobsSubmit(con *xmlrpc.Client, def string) (LavaJobIDs, error) {
+	var ret LavaJobIDs
+
+	err := con.Call("scheduler.jobs.submit", def, &ret)
+	if err != nil {
+		return nil, err
 	}
 
 	return ret, nil
@@ -266,10 +297,113 @@ func (j jobsDefinition) Exec(con *xmlrpc.Client, processedArgs []string, args []
 	return nil
 }
 
+type jobsValidate struct {
+}
+
+func (j jobsValidate) GetParser() *flag.FlagSet {
+	var strict bool
+
+	mySet := flag.NewFlagSet("", flag.ExitOnError)
+	mySet.BoolVar(&strict, "strict", false, "strict mode")
+
+	return mySet
+}
+
+func (j jobsValidate) Help(processedArgs []string, args []string) string {
+	mySet := j.GetParser()
+	s := ""
+	mySet.VisitAll(func(f *flag.Flag) {
+		s += "[--" + f.Name + " " + f.Usage + "] "
+	})
+	s += "<definition file> "
+	return MakeHelp(nil, processedArgs, args, s)
+}
+
+func (j jobsValidate) ValidateArgs(processedArgs []string, args []string) bool {
+	if len(args) != 1 {
+		return false
+	}
+
+	mySet := j.GetParser()
+	mySet.Parse(args)
+
+	if len(mySet.Args()) != 1 {
+		return false
+	}
+	return true
+}
+
+func (j jobsValidate) Exec(con *xmlrpc.Client, processedArgs []string, args []string) error {
+
+	mySet := j.GetParser()
+	mySet.Parse(args)
+
+	isStrict := mySet.Lookup("strict")
+
+	path, err := filepath.Abs(mySet.Args()[0])
+	if err != nil {
+		return fmt.Errorf("Failed to resolv path: #%v ", err)
+	}
+	yamlFile, err := ioutil.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("Failed to read file: #%v ", err)
+	}
+
+	ret, err := LavaJobsValidate(con, string(yamlFile),
+		isStrict != nil && isStrict.Value.String() == "true")
+	if err != nil {
+		return err
+	}
+
+	for k, v := range ret {
+		fmt.Printf("%s: %v\n", k, v)
+	}
+
+	return nil
+}
+
+type jobsSubmit struct {
+}
+
+func (j jobsSubmit) Help(processedArgs []string, args []string) string {
+	return MakeHelp(nil, processedArgs, args, "<definition>")
+}
+
+func (j jobsSubmit) ValidateArgs(processedArgs []string, args []string) bool {
+	if len(args) != 1 {
+		return false
+	}
+
+	return true
+}
+
+func (j jobsSubmit) Exec(con *xmlrpc.Client, processedArgs []string, args []string) error {
+
+	path, err := filepath.Abs(args[0])
+	if err != nil {
+		return fmt.Errorf("Failed to resolv path: #%v ", err)
+	}
+	yamlFile, err := ioutil.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("Failed to read file: #%v ", err)
+	}
+
+	ret, err := LavaJobsSubmit(con, string(yamlFile))
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(ret)
+
+	return nil
+}
+
 var j group = group{
 	map[string]command{
 		"list":       jobsList{},
 		"show":       jobsShow{},
 		"definition": jobsDefinition{},
+		"validate":   jobsValidate{},
+		"submit":     jobsSubmit{},
 	},
 }

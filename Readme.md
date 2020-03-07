@@ -21,3 +21,5 @@ The following functions are implemented:
 * jobs list
 * jobs show
 * jobs definition
+* jobs validate
+* jobs submit
