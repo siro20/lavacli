@@ -65,7 +65,7 @@ func (g group) Exec(con *xmlrpc.Client, processedArgs []string, args []string) e
 		}
 	}
 
-	return fmt.Errorf("Internal error: Command not found")
+	return fmt.Errorf("Internal error: Command not found\n%s", g.Help(append(processedArgs, args[0]), args[1:]))
 }
 
 type command interface {
@@ -74,38 +74,11 @@ type command interface {
 	Help(processedArgs []string, args []string) string
 }
 
-type rect struct {
-	width, height float64
-}
-
-func (r rect) Help(processedArgs []string, args []string) string {
-	return ""
-}
-
-func (r rect) ValidateArgs(processedArgs []string, args []string) bool {
-	return true
-}
-
-func (r rect) Exec(con *xmlrpc.Client, processedArgs []string, args []string) error {
-	log.Println(processedArgs)
-	log.Println(args)
-	return nil
-}
-
-var r rect
-
-var commands map[string]command = map[string]command{
-	"aliases":      r,
-	"devices":      d,
-	"device-types": r,
-	"events":       r,
-	"identities":   i,
-	"jobs":         r,
-	"results":      r,
-	"system":       r,
-	"tags":         r,
-	"utils":        r,
-	"workers":      r,
+var lavacli group = group{
+	map[string]command{
+		"identities": i,
+		"devices":    d,
+	},
 }
 
 func getXMLRPCClient(uri string, proxy string) (*xmlrpc.Client, error) {
@@ -126,11 +99,6 @@ func getXMLRPCClient(uri string, proxy string) (*xmlrpc.Client, error) {
 	return client, nil
 }
 
-func printHelp(processedArgs []string, args []string) {
-	s := "Help:\n" + MakeHelp(commands, processedArgs, args, "[--identity IDENTITY] [--uri URI]")
-	log.Fatal(s)
-}
-
 func main() {
 	identity := flag.String("identity", "default", "identity stored in the configuration")
 	uri := flag.String("uri", "", "URI of the lava-server RPC endpoint")
@@ -145,56 +113,48 @@ func main() {
 	}
 
 	if len(os.Args) < 2 {
-		printHelp([]string{os.Args[0]}, nil)
+		log.Fatal("Usage:\n" + lavacli.Help([]string{os.Args[0]}, nil))
 	}
-	for k, v := range commands {
-		if k == os.Args[1] {
-			var c configIndentity
-			var u string
-			var con *xmlrpc.Client
-			u = *uri
-			if k != "identities" {
-				var err error
-				configs := GetConf()
-				found := false
-				for k, v := range configs {
-					if k == *identity {
-						c = v
-						found = true
-					}
-				}
-				if !found {
-					log.Fatal("Identity not found in config")
-				}
 
-				if c.Uri == "" && *uri == "" {
-					log.Fatal("No URI specified")
-				}
+	var c configIndentity
+	var u string
+	var con *xmlrpc.Client
+	u = *uri
+	if os.Args[1] != "identities" {
+		var err error
+		configs := GetConf()
+		found := false
+		for k, v := range configs {
+			if k == *identity {
+				c = v
+				found = true
+			}
+		}
+		if !found {
+			log.Fatal("Identity not found in config")
+		}
 
-				if c.Username != "" && c.Token != "" {
-					url, err := url.Parse(c.Uri)
-					if err != nil {
-						log.Fatalf("Failed to parse URI: %v", err)
-					}
-					u = fmt.Sprintf("%s://%s:%s@%s%s", url.Scheme, c.Username, c.Token, url.Host, url.Path)
-				} else if c.Uri != "" {
-					u = c.Uri
-				}
-				con, err = getXMLRPCClient(u, c.Proxy)
-				if err != nil {
-					log.Fatal(err)
-				}
-			}
-			if !v.ValidateArgs([]string{os.Args[0], os.Args[1]}, os.Args[2:]) {
-				log.Fatal(v.Help([]string{os.Args[0], os.Args[1]}, os.Args[2:]))
-			}
-			err := v.Exec(con, []string{os.Args[0], os.Args[1]}, os.Args[2:])
+		if c.Uri == "" && *uri == "" {
+			log.Fatal("No URI specified")
+		}
+
+		if c.Username != "" && c.Token != "" {
+			url, err := url.Parse(c.Uri)
 			if err != nil {
-				log.Fatal(err)
+				log.Fatalf("Failed to parse URI: %v", err)
 			}
-			return
+			u = fmt.Sprintf("%s://%s:%s@%s%s", url.Scheme, c.Username, c.Token, url.Host, url.Path)
+		} else if c.Uri != "" {
+			u = c.Uri
+		}
+		con, err = getXMLRPCClient(u, c.Proxy)
+		if err != nil {
+			log.Fatal(err)
 		}
 	}
-	printHelp([]string{os.Args[0]}, nil)
 
+	err := lavacli.Exec(con, []string{os.Args[0]}, os.Args[1:])
+	if err != nil {
+		log.Fatal(err)
+	}
 }
