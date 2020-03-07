@@ -5,7 +5,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -41,7 +40,7 @@ type group struct {
 }
 
 func (g group) Help(processedArgs []string, args []string) string {
-	return MakeHelp(g.Commands, processedArgs, args, "")
+	return MakeHelp(g.Commands, processedArgs, args, "[--identity ID] [--uri URI]")
 }
 
 func (g group) ValidateArgs(processedArgs []string, args []string) bool {
@@ -109,14 +108,17 @@ func main() {
 	flag.Parse()
 
 	if identity == nil {
-		log.Fatal("No identity specified")
+		fmt.Fprintf(os.Stderr, "No identity specified\n")
+		os.Exit(1)
 	}
 	if uri == nil {
-		log.Fatal("No URI specified")
+		fmt.Fprintf(os.Stderr, "No URI specified\n")
+		os.Exit(1)
 	}
 
 	if len(os.Args) < 2 {
-		log.Fatal("Usage:\n" + lavacli.Help([]string{os.Args[0]}, nil))
+		fmt.Fprintf(os.Stderr, lavacli.Help([]string{os.Args[0]}, nil)+"\n")
+		os.Exit(1)
 	}
 
 	var c configIndentity
@@ -134,17 +136,20 @@ func main() {
 			}
 		}
 		if !found {
-			log.Fatal("Identity not found in config")
+			fmt.Fprintf(os.Stderr, "Identity not found in config\n")
+			os.Exit(1)
 		}
 
 		if c.Uri == "" && *uri == "" {
-			log.Fatal("No URI specified")
+			fmt.Fprintf(os.Stderr, "No URI specified\n")
+			os.Exit(1)
 		}
 
 		if c.Username != "" && c.Token != "" {
 			url, err := url.Parse(c.Uri)
 			if err != nil {
-				log.Fatalf("Failed to parse URI: %v", err)
+				fmt.Fprintf(os.Stderr, "Failed to parse URI: %v\n", err)
+				os.Exit(1)
 			}
 			u = fmt.Sprintf("%s://%s:%s@%s%s", url.Scheme, c.Username, c.Token, url.Host, url.Path)
 		} else if c.Uri != "" {
@@ -152,12 +157,14 @@ func main() {
 		}
 		con, err = getXMLRPCClient(u, c.Proxy)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Fprintf(os.Stderr, "%s\n", err)
+			os.Exit(1)
 		}
 	}
 
 	err := lavacli.Exec(con, []string{os.Args[0]}, os.Args[1:])
 	if err != nil {
-		log.Fatal(err)
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		os.Exit(1)
 	}
 }
