@@ -211,12 +211,3 @@ var d group = group{
 		"show": devicesShow{},
 	},
 }
-
-/*
-	"dict":         del{},
-	"list":         show{},
-	"maintainance": list{},
-	"show":         add{},
-	"tags":         del{},
-	"update":       show{},
-*/
