@@ -96,7 +96,7 @@ var r rect
 
 var commands map[string]command = map[string]command{
 	"aliases":      r,
-	"devices":      r,
+	"devices":      d,
 	"device-types": r,
 	"events":       r,
 	"identities":   i,
@@ -154,6 +154,7 @@ func main() {
 			var con *xmlrpc.Client
 			u = *uri
 			if k != "identities" {
+				var err error
 				configs := GetConf()
 				found := false
 				for k, v := range configs {
@@ -179,31 +180,10 @@ func main() {
 				} else if c.Uri != "" {
 					u = c.Uri
 				}
-				con, err := getXMLRPCClient(u, c.Proxy)
+				con, err = getXMLRPCClient(u, c.Proxy)
 				if err != nil {
 					log.Fatal(err)
 				}
-
-				type LavaJobState struct {
-					Description    string `xmlrpc:"description"`
-					State          string `xmlrpc:"state"`
-					ID             int    `xmlrpc:"id"`
-					EndTime        string `xmlrpc:"end_time"`
-					SubmitTime     string `xmlrpc:"submit_time"`
-					FailureComment string `xmlrpc:"failure_comment"`
-					Status         int    `xmlrpc:"status"`
-					HealthCheck    string `xmlrpc:"health_check"`
-				}
-				result := struct {
-					Jobs []LavaJobState `xmlrpc:""`
-				}{}
-				var result2 interface{}
-
-				err = con.Call("scheduler.all_devices", nil, &result2)
-				log.Printf("%v\n", err)
-				log.Printf("%v\n", result2)
-
-				log.Printf("%v\n", result)
 			}
 			if !v.ValidateArgs([]string{os.Args[0], os.Args[1]}, os.Args[2:]) {
 				log.Fatal(v.Help([]string{os.Args[0], os.Args[1]}, os.Args[2:]))
