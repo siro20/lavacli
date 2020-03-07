@@ -136,7 +136,7 @@ func main() {
 			}
 		}
 		if !found {
-			fmt.Fprintf(os.Stderr, "Identity not found in config\n")
+			fmt.Fprintf(os.Stderr, "Identity %s not found in lavacli.yaml\n", *identity)
 			os.Exit(1)
 		}
 
