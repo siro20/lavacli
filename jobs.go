@@ -61,6 +61,19 @@ func LavaJobsShow(con *xmlrpc.Client, id int) (*LavaJobState, error) {
 	return &ret, nil
 }
 
+type LavaJobDefintion string
+
+func LavaJobsDefinition(con *xmlrpc.Client, id int) (LavaJobDefintion, error) {
+	var ret LavaJobDefintion
+
+	err := con.Call("scheduler.jobs.definition", id, &ret)
+	if err != nil {
+		return ret, err
+	}
+
+	return ret, nil
+}
+
 // ******************
 
 type jobsList struct {
@@ -176,7 +189,10 @@ func (j jobsShow) Exec(con *xmlrpc.Client, processedArgs []string, args []string
 	mySet := j.GetParser()
 	mySet.Parse(args)
 
-	id, _ := strconv.Atoi(mySet.Args()[0])
+	id, err := strconv.Atoi(mySet.Args()[0])
+	if err != nil {
+		return err
+	}
 	ret, err := LavaJobsShow(con, id)
 	if err != nil {
 		return err
@@ -217,9 +233,41 @@ func (j jobsShow) Exec(con *xmlrpc.Client, processedArgs []string, args []string
 	return nil
 }
 
+type jobsDefinition struct {
+}
+
+func (j jobsDefinition) Help(processedArgs []string, args []string) string {
+	return MakeHelp(nil, processedArgs, args, "<id>")
+}
+
+func (j jobsDefinition) ValidateArgs(processedArgs []string, args []string) bool {
+	if len(args) != 1 {
+		return false
+	}
+
+	return true
+}
+
+func (j jobsDefinition) Exec(con *xmlrpc.Client, processedArgs []string, args []string) error {
+
+	id, err := strconv.Atoi(args[0])
+	if err != nil {
+		return err
+	}
+	ret, err := LavaJobsDefinition(con, id)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(ret)
+
+	return nil
+}
+
 var j group = group{
 	map[string]command{
-		"list": jobsList{},
-		"show": jobsShow{},
+		"list":       jobsList{},
+		"show":       jobsShow{},
+		"definition": jobsDefinition{},
 	},
 }
