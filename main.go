@@ -78,6 +78,7 @@ var lavacli group = group{
 	map[string]command{
 		"identities": i,
 		"devices":    d,
+		"jobs":       j,
 	},
 }
 
