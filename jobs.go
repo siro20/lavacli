@@ -107,6 +107,13 @@ func LavaJobsSubmit(con *xmlrpc.Client, def string) (LavaJobIDs, error) {
 	return ret, nil
 }
 
+func LavaJobsCancel(con *xmlrpc.Client, id int) error {
+
+	err := con.Call("scheduler.jobs.definition", id, nil)
+
+	return err
+}
+
 // ******************
 
 type jobsList struct {
@@ -398,6 +405,32 @@ func (j jobsSubmit) Exec(con *xmlrpc.Client, processedArgs []string, args []stri
 	return nil
 }
 
+type jobsCancel struct {
+}
+
+func (j jobsCancel) Help(processedArgs []string, args []string) string {
+	return MakeHelp(nil, processedArgs, args, "<id>")
+}
+
+func (j jobsCancel) ValidateArgs(processedArgs []string, args []string) bool {
+	if len(args) != 1 {
+		return false
+	}
+
+	return true
+}
+
+func (j jobsCancel) Exec(con *xmlrpc.Client, processedArgs []string, args []string) error {
+
+	id, err := strconv.Atoi(args[0])
+	if err != nil {
+		return err
+	}
+	err = LavaJobsCancel(con, id)
+
+	return err
+}
+
 var j group = group{
 	map[string]command{
 		"list":       jobsList{},
@@ -405,5 +438,6 @@ var j group = group{
 		"definition": jobsDefinition{},
 		"validate":   jobsValidate{},
 		"submit":     jobsSubmit{},
+		"cancel":     jobsCancel{},
 	},
 }

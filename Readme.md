@@ -23,3 +23,4 @@ The following functions are implemented:
 * jobs definition
 * jobs validate
 * jobs submit
+* jobs cancel
