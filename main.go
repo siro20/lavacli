@@ -162,7 +162,7 @@ func main() {
 		}
 	}
 
-	err := lavacli.Exec(con, []string{os.Args[0]}, os.Args[1:])
+	err := lavacli.Exec(con, []string{os.Args[0]}, flag.Args())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(1)
