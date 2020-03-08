@@ -5,8 +5,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"net/http"
-	"net/url"
 	"os"
 	"strings"
 
@@ -95,27 +93,10 @@ var lavacli group = group{
 	},
 }
 
-func getXMLRPCClient(uri string, proxy string) (*xmlrpc.Client, error) {
-	tr := http.Transport{}
-
-	if proxy != "" {
-		u, err := url.Parse(proxy)
-		if err != nil {
-			return nil, err
-		}
-		tr.Proxy = http.ProxyURL(u)
-	}
-
-	client, err := xmlrpc.NewClient(uri, &tr)
-	if err != nil {
-		return nil, err
-	}
-	return client, nil
-}
-
 func main() {
 	identity := flag.String("identity", "default", "identity stored in the configuration")
 	uri := flag.String("uri", "", "URI of the lava-server RPC endpoint")
+	proxy := flag.String("proxy", "", "Proxy to use when connecting")
 
 	flag.Parse()
 
@@ -127,57 +108,34 @@ func main() {
 		fmt.Fprintf(os.Stderr, "No URI specified\n")
 		os.Exit(1)
 	}
-
+	if proxy == nil {
+		fmt.Fprintf(os.Stderr, "No proxy specified\n")
+		os.Exit(1)
+	}
 	if len(os.Args) < 2 {
 		fmt.Fprintf(os.Stderr, lavacli.Help([]string{os.Args[0]}, nil)+"\n")
 		os.Exit(1)
 	}
 
-	var c lava.LavaConfigIndentity
-	var u string
-	var con *xmlrpc.Client
-	u = *uri
+	var c *lava.LavaConnection
 	if os.Args[1] != "identities" {
-		configs, err := lava.LavaGetConf()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "%v\n", err)
-			os.Exit(1)
-		}
-		found := false
-		for k, v := range configs {
-			if k == *identity {
-				c = v
-				found = true
-			}
-		}
-		if !found {
-			fmt.Fprintf(os.Stderr, "Identity %s not found in lavacli.yaml\n", *identity)
-			os.Exit(1)
-		}
-
-		if c.Uri == "" && *uri == "" {
-			fmt.Fprintf(os.Stderr, "No URI specified\n")
-			os.Exit(1)
-		}
-
-		if c.Username != "" && c.Token != "" {
-			url, err := url.Parse(c.Uri)
+		var err error
+		if *uri != "" {
+			c, err = lava.LavaConnectByUri(*uri, *proxy)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Failed to parse URI: %v\n", err)
+				fmt.Fprintf(os.Stderr, "%v\n", err)
 				os.Exit(1)
 			}
-			u = fmt.Sprintf("%s://%s:%s@%s%s", url.Scheme, c.Username, c.Token, url.Host, url.Path)
-		} else if c.Uri != "" {
-			u = c.Uri
-		}
-		con, err = getXMLRPCClient(u, c.Proxy)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s\n", err)
-			os.Exit(1)
+		} else {
+			c, err = lava.LavaConnectByConfigID(*identity)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "%v\n", err)
+				os.Exit(1)
+			}
 		}
 	}
 
-	err := lavacli.Exec(con, []string{os.Args[0]}, flag.Args())
+	err := lavacli.Exec(c.Con, []string{os.Args[0]}, flag.Args())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(1)
