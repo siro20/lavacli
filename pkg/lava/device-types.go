@@ -2,10 +2,6 @@
 
 package lava
 
-import (
-	"github.com/kolo/xmlrpc"
-)
-
 type LavaDeviceTypesListing struct {
 	Devices   int    `xmlrpc:"devices"`
 	Installed bool   `xmlrpc:"installed"`
@@ -13,10 +9,10 @@ type LavaDeviceTypesListing struct {
 	Template  bool   `xmlrpc:"template"`
 }
 
-func LavaDevicesTypesList(con *xmlrpc.Client, showAll bool) ([]LavaDeviceTypesListing, error) {
+func (c LavaConnection) LavaDevicesTypesList(showAll bool) ([]LavaDeviceTypesListing, error) {
 	var ret []LavaDeviceTypesListing
 
-	err := con.Call("scheduler.device_types.list", showAll, &ret)
+	err := c.con.Call("scheduler.device_types.list", showAll, &ret)
 	if err != nil {
 		return nil, err
 	}

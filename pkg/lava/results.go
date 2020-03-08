@@ -5,7 +5,6 @@ package lava
 import (
 	"encoding/json"
 
-	"github.com/kolo/xmlrpc"
 	"gopkg.in/yaml.v2"
 )
 
@@ -39,17 +38,17 @@ type LavaResult []struct {
 	} `yaml:"metadata,omitempty" json:"metadata,omitempty"`
 }
 
-func LavaResultsAsYAML(con *xmlrpc.Client, id int) (string, error) {
+func (c LavaConnection) LavaResultsAsYAML(id int) (string, error) {
 	var ret string
 
-	err := con.Call("results.get_testjob_results_yaml", id, &ret)
+	err := c.con.Call("results.get_testjob_results_yaml", id, &ret)
 
 	return ret, err
 }
 
-func LavaResults(con *xmlrpc.Client, id int) (LavaResult, error) {
+func (c LavaConnection) LavaResults(id int) (LavaResult, error) {
 	var ret LavaResult
-	yamlStr, err := LavaResultsAsYAML(con, id)
+	yamlStr, err := c.LavaResultsAsYAML(id)
 
 	err = yaml.Unmarshal([]byte(yamlStr), &ret)
 	if err != nil {
@@ -58,8 +57,8 @@ func LavaResults(con *xmlrpc.Client, id int) (LavaResult, error) {
 	return ret, nil
 }
 
-func LavaResultsAsJSON(con *xmlrpc.Client, id int) (string, error) {
-	results, err := LavaResults(con, id)
+func (c LavaConnection) LavaResultsAsJSON(id int) (string, error) {
+	results, err := c.LavaResults(id)
 
 	d, err := json.Marshal(&results)
 	if err != nil {

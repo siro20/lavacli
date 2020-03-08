@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/kolo/xmlrpc"
 	"github.com/siro20/lavacli/pkg/lava"
 )
 
@@ -51,7 +50,7 @@ func (r resultsShow) ValidateArgs(processedArgs []string, args []string) bool {
 	return true
 }
 
-func (r resultsShow) Exec(con *xmlrpc.Client, processedArgs []string, args []string) error {
+func (r resultsShow) Exec(con *lava.LavaConnection, processedArgs []string, args []string) error {
 
 	mySet := r.GetParser()
 	mySet.Parse(args)
@@ -65,19 +64,19 @@ func (r resultsShow) Exec(con *xmlrpc.Client, processedArgs []string, args []str
 	isJson := mySet.Lookup("json")
 
 	if isYaml != nil && isYaml.Value.String() == "true" {
-		ret, err := lava.LavaResultsAsYAML(con, id)
+		ret, err := con.LavaResultsAsYAML(id)
 		if err != nil {
 			return err
 		}
 		fmt.Printf(ret)
 	} else if isJson != nil && isJson.Value.String() == "true" {
-		ret, err := lava.LavaResultsAsJSON(con, id)
+		ret, err := con.LavaResultsAsJSON(id)
 		if err != nil {
 			return err
 		}
 		fmt.Printf(ret)
 	} else {
-		ret, err := lava.LavaResults(con, id)
+		ret, err := con.LavaResults(id)
 		if err != nil {
 			return err
 		}

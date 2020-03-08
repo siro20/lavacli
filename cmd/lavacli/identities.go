@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/kolo/xmlrpc"
 	"github.com/siro20/lavacli/pkg/lava"
 )
 
@@ -24,7 +23,7 @@ func (l list) ValidateArgs(processedArgs []string, args []string) bool {
 	return true
 }
 
-func (l list) Exec(unused *xmlrpc.Client, processedArgs []string, args []string) error {
+func (l list) Exec(unused *lava.LavaConnection, processedArgs []string, args []string) error {
 	ids, err := lava.LavaIdentitiesList()
 	if err != nil {
 		return err
@@ -82,7 +81,7 @@ func (a add) ValidateArgs(processedArgs []string, args []string) bool {
 	return true
 }
 
-func (a add) Exec(unused *xmlrpc.Client, processedArgs []string, args []string) error {
+func (a add) Exec(unused *lava.LavaConnection, processedArgs []string, args []string) error {
 	mySet := a.GetParser()
 	mySet.Parse(args)
 
@@ -142,7 +141,7 @@ func (s show) ValidateArgs(processedArgs []string, args []string) bool {
 	return false
 }
 
-func (s show) Exec(unused *xmlrpc.Client, processedArgs []string, args []string) error {
+func (s show) Exec(unused *lava.LavaConnection, processedArgs []string, args []string) error {
 	id := args[0]
 
 	v, err := lava.LavaIdentitiesShow(id)
@@ -191,7 +190,7 @@ func (d del) ValidateArgs(processedArgs []string, args []string) bool {
 	return false
 }
 
-func (d del) Exec(unused *xmlrpc.Client, processedArgs []string, args []string) error {
+func (d del) Exec(unused *lava.LavaConnection, processedArgs []string, args []string) error {
 	id := args[0]
 
 	return lava.LavaIdentitiesDelete(id)

@@ -8,7 +8,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/kolo/xmlrpc"
 	"github.com/siro20/lavacli/pkg/lava"
 )
 
@@ -64,7 +63,7 @@ func (g group) ValidateArgs(processedArgs []string, args []string) bool {
 	return found
 }
 
-func (g group) Exec(con *xmlrpc.Client, processedArgs []string, args []string) error {
+func (g group) Exec(con *lava.LavaConnection, processedArgs []string, args []string) error {
 	for k, v := range g.Commands {
 		if args[0] == k {
 			if !v.ValidateArgs(append(processedArgs, args[0]), args[1:]) {
@@ -78,7 +77,7 @@ func (g group) Exec(con *xmlrpc.Client, processedArgs []string, args []string) e
 }
 
 type command interface {
-	Exec(con *xmlrpc.Client, processedArgs []string, args []string) error
+	Exec(con *lava.LavaConnection, processedArgs []string, args []string) error
 	ValidateArgs(processedArgs []string, args []string) bool
 	Help(processedArgs []string, args []string) string
 }
@@ -135,7 +134,7 @@ func main() {
 		}
 	}
 
-	err := lavacli.Exec(c.Con, []string{os.Args[0]}, flag.Args())
+	err := lavacli.Exec(c, []string{os.Args[0]}, flag.Args())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(1)

@@ -2,10 +2,6 @@
 
 package lava
 
-import (
-	"github.com/kolo/xmlrpc"
-)
-
 type LavaDeviceList struct {
 	Hostname   string `xmlrpc:"hostname"`
 	Type       string `xmlrpc:"type"`
@@ -15,10 +11,10 @@ type LavaDeviceList struct {
 	Pipeline   bool   `xmlrpc:"pipeline"`
 }
 
-func LavaDevicesList(con *xmlrpc.Client) ([]LavaDeviceList, error) {
+func (c LavaConnection) LavaDevicesList() ([]LavaDeviceList, error) {
 	var ret []LavaDeviceList
 
-	err := con.Call("scheduler.devices.list", nil, &ret)
+	err := c.con.Call("scheduler.devices.list", nil, &ret)
 	if err != nil {
 		return nil, err
 	}
@@ -40,10 +36,10 @@ type LavaDevice struct {
 	Pipeline      bool     `xmlrpc:"pipeline"`
 }
 
-func LavaDevicesShow(con *xmlrpc.Client, hostname string) (*LavaDevice, error) {
+func (c LavaConnection) LavaDevicesShow(hostname string) (*LavaDevice, error) {
 	var ret LavaDevice
 
-	err := con.Call("scheduler.devices.show", hostname, &ret)
+	err := c.con.Call("scheduler.devices.show", hostname, &ret)
 	if err != nil {
 		return nil, err
 	}

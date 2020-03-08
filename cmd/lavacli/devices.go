@@ -7,7 +7,6 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/kolo/xmlrpc"
 	"github.com/siro20/lavacli/pkg/lava"
 
 	"gopkg.in/yaml.v2"
@@ -52,9 +51,9 @@ func (l devicesList) ValidateArgs(processedArgs []string, args []string) bool {
 	return true
 }
 
-func (l devicesList) Exec(con *xmlrpc.Client, processedArgs []string, args []string) error {
+func (l devicesList) Exec(con *lava.LavaConnection, processedArgs []string, args []string) error {
 
-	ret, err := lava.LavaDevicesList(con)
+	ret, err := con.LavaDevicesList()
 	if err != nil {
 		return err
 	}
@@ -127,14 +126,14 @@ func (d devicesShow) ValidateArgs(processedArgs []string, args []string) bool {
 	return true
 }
 
-func (d devicesShow) Exec(con *xmlrpc.Client, processedArgs []string, args []string) error {
+func (d devicesShow) Exec(con *lava.LavaConnection, processedArgs []string, args []string) error {
 
 	mySet := d.GetParser()
 	mySet.Parse(args)
 
 	name := mySet.Args()[0]
 
-	ret, err := lava.LavaDevicesShow(con, name)
+	ret, err := con.LavaDevicesShow(name)
 	if err != nil {
 		return err
 	}

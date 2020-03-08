@@ -11,7 +11,7 @@ import (
 )
 
 type LavaConnection struct {
-	Con   *xmlrpc.Client
+	con   *xmlrpc.Client
 	proxy string
 	uri   string
 }
@@ -32,7 +32,7 @@ func LavaConnectByUri(uri string, proxy string) (*LavaConnection, error) {
 	if err != nil {
 		return nil, err
 	}
-	ret.Con = client
+	ret.con = client
 	ret.proxy = proxy
 	ret.uri = uri
 

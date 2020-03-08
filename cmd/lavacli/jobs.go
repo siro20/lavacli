@@ -12,7 +12,6 @@ import (
 
 	"github.com/siro20/lavacli/pkg/lava"
 
-	"github.com/kolo/xmlrpc"
 	"gopkg.in/yaml.v2"
 )
 
@@ -55,9 +54,9 @@ func (l jobsList) ValidateArgs(processedArgs []string, args []string) bool {
 	return true
 }
 
-func (l jobsList) Exec(con *xmlrpc.Client, processedArgs []string, args []string) error {
+func (l jobsList) Exec(con *lava.LavaConnection, processedArgs []string, args []string) error {
 
-	ret, err := lava.LavaJobsList(con)
+	ret, err := con.LavaJobsList()
 	if err != nil {
 		return err
 	}
@@ -130,7 +129,7 @@ func (j jobsShow) ValidateArgs(processedArgs []string, args []string) bool {
 	return true
 }
 
-func (j jobsShow) Exec(con *xmlrpc.Client, processedArgs []string, args []string) error {
+func (j jobsShow) Exec(con *lava.LavaConnection, processedArgs []string, args []string) error {
 
 	mySet := j.GetParser()
 	mySet.Parse(args)
@@ -139,7 +138,7 @@ func (j jobsShow) Exec(con *xmlrpc.Client, processedArgs []string, args []string
 	if err != nil {
 		return err
 	}
-	ret, err := lava.LavaJobsShow(con, id)
+	ret, err := con.LavaJobsShow(id)
 	if err != nil {
 		return err
 	}
@@ -196,13 +195,13 @@ func (j jobsDefinition) ValidateArgs(processedArgs []string, args []string) bool
 	return true
 }
 
-func (j jobsDefinition) Exec(con *xmlrpc.Client, processedArgs []string, args []string) error {
+func (j jobsDefinition) Exec(con *lava.LavaConnection, processedArgs []string, args []string) error {
 
 	id, err := strconv.Atoi(args[0])
 	if err != nil {
 		return err
 	}
-	ret, err := lava.LavaJobsDefinition(con, id)
+	ret, err := con.LavaJobsDefinition(id)
 	if err != nil {
 		return err
 	}
@@ -250,7 +249,7 @@ func (j jobsValidate) ValidateArgs(processedArgs []string, args []string) bool {
 	return true
 }
 
-func (j jobsValidate) Exec(con *xmlrpc.Client, processedArgs []string, args []string) error {
+func (j jobsValidate) Exec(con *lava.LavaConnection, processedArgs []string, args []string) error {
 
 	mySet := j.GetParser()
 	mySet.Parse(args)
@@ -266,7 +265,7 @@ func (j jobsValidate) Exec(con *xmlrpc.Client, processedArgs []string, args []st
 		return fmt.Errorf("Failed to read file: #%v ", err)
 	}
 
-	ret, err := lava.LavaJobsValidate(con, string(yamlFile),
+	ret, err := con.LavaJobsValidate(string(yamlFile),
 		isStrict != nil && isStrict.Value.String() == "true")
 	if err != nil {
 		return err
@@ -296,7 +295,7 @@ func (j jobsSubmit) ValidateArgs(processedArgs []string, args []string) bool {
 	return true
 }
 
-func (j jobsSubmit) Exec(con *xmlrpc.Client, processedArgs []string, args []string) error {
+func (j jobsSubmit) Exec(con *lava.LavaConnection, processedArgs []string, args []string) error {
 
 	path, err := filepath.Abs(args[0])
 	if err != nil {
@@ -307,7 +306,7 @@ func (j jobsSubmit) Exec(con *xmlrpc.Client, processedArgs []string, args []stri
 		return fmt.Errorf("Failed to read file: #%v ", err)
 	}
 
-	ret, err := lava.LavaJobsSubmit(con, string(yamlFile))
+	ret, err := con.LavaJobsSubmit(string(yamlFile))
 	if err != nil {
 		return err
 	}
@@ -334,13 +333,13 @@ func (j jobsCancel) ValidateArgs(processedArgs []string, args []string) bool {
 	return true
 }
 
-func (j jobsCancel) Exec(con *xmlrpc.Client, processedArgs []string, args []string) error {
+func (j jobsCancel) Exec(con *lava.LavaConnection, processedArgs []string, args []string) error {
 
 	id, err := strconv.Atoi(args[0])
 	if err != nil {
 		return err
 	}
-	err = lava.LavaJobsCancel(con, id)
+	err = con.LavaJobsCancel(id)
 
 	return err
 }
