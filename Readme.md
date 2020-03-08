@@ -26,3 +26,40 @@ The following functions are implemented:
 * jobs submit
 * jobs cancel
 * results (testjob only)
+
+## Building the cli
+
+```
+cd cmd/lavacli
+go build .
+```
+
+## Using the API
+
+1. Import the package
+```
+	import "github.com/siro20/lavacli/pkg/lava"
+```
+
+2. Connect to the server using identity "default" as defined in ~/.config/lavacli.yaml:
+
+```
+c, err := lava.LavaConnectByConfigID("default")
+if err != nil {
+	fmt.Fprintf(os.Stderr, "%v\n", err)
+	os.Exit(1)
+}
+```
+
+3. List jobs:
+
+```
+	ret, err := c.LavaJobsList()
+	if err != nil {
+		return err
+	}
+	fmt.Printf("jobs:\n")
+	for _, v := range ret {
+		fmt.Printf("* %d %s,%s [%s] (%s) - %s\n", v.ID, v.State, v.Health, v.Submitter, v.Description, v.DeviceType)
+	}
+```
