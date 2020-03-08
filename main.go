@@ -80,6 +80,7 @@ var lavacli group = group{
 		"identities": i,
 		"devices":    d,
 		"jobs":       j,
+		"results":    r,
 	},
 }
 

@@ -24,3 +24,4 @@ The following functions are implemented:
 * jobs validate
 * jobs submit
 * jobs cancel
+* results (testjob only)
