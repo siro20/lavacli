@@ -9,112 +9,12 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"strconv"
-	"time"
+
+	"github.com/siro20/lavacli/pkg/lava"
 
 	"github.com/kolo/xmlrpc"
 	"gopkg.in/yaml.v2"
 )
-
-type LavaJobsListing struct {
-	Description string `xmlrpm:"description"`
-	DeviceType  string `xmlrpc:"device_type"`
-	Health      string `xmlrpc:"health"`
-	ID          int    `xmlrpc:"id"`
-	State       string `xmlrpc:"state"`
-	Submitter   string `xmlrpc:"submitter"`
-}
-
-func LavaJobsList(con *xmlrpc.Client) ([]LavaJobsListing, error) {
-	var ret []LavaJobsListing
-
-	err := con.Call("scheduler.jobs.list", nil, &ret)
-	if err != nil {
-		return nil, err
-	}
-
-	return ret, nil
-}
-
-type LavaJobState struct {
-	Description    string    `xmlrpc:"description"`
-	DeviceType     string    `xmlrpc:"device_type"`
-	Device         string    `xmlrpc:"device"`
-	State          string    `xmlrpc:"state"`
-	ID             int       `xmlrpc:"id"`
-	EndTime        time.Time `xmlrpc:"end_time"`
-	SubmitTime     time.Time `xmlrpc:"submit_time"`
-	FailureComment string    `xmlrpc:"failure_comment"`
-	Status         int       `xmlrpc:"status"`
-	HealthCheck    bool      `xmlrpc:"health_check"`
-	Pipeline       bool      `xmlrpc:"pipeline"`
-	Tags           []string  `xmlrpc:"tags"`
-	Visibility     string    `xmlrpc:"visibility"`
-	Submitter      string    `xmlrpc:"submitter"`
-	StartTime      time.Time `xmlrpc:"start_time"`
-	Health         string    `xmlrpc:"health"`
-}
-
-func LavaJobsShow(con *xmlrpc.Client, id int) (*LavaJobState, error) {
-	var ret LavaJobState
-
-	err := con.Call("scheduler.jobs.show", id, &ret)
-	if err != nil {
-		return nil, err
-	}
-
-	return &ret, nil
-}
-
-type LavaJobDefintion string
-
-func LavaJobsDefinition(con *xmlrpc.Client, id int) (LavaJobDefintion, error) {
-	var ret LavaJobDefintion
-
-	err := con.Call("scheduler.jobs.definition", id, &ret)
-	if err != nil {
-		return ret, err
-	}
-
-	return ret, nil
-}
-
-type LavaJobErrors map[string]interface{}
-
-func LavaJobsValidate(con *xmlrpc.Client, def string, strict bool) (LavaJobErrors, error) {
-	var ret LavaJobErrors
-	var args []interface{}
-	args = append(args, def)
-	args = append(args, strict)
-
-	err := con.Call("scheduler.jobs.validate", args, &ret)
-	if err != nil {
-		return nil, err
-	}
-
-	return ret, nil
-}
-
-type LavaJobIDs []int
-
-func LavaJobsSubmit(con *xmlrpc.Client, def string) (LavaJobIDs, error) {
-	var ret LavaJobIDs
-
-	err := con.Call("scheduler.jobs.submit", def, &ret)
-	if err != nil {
-		return nil, err
-	}
-
-	return ret, nil
-}
-
-func LavaJobsCancel(con *xmlrpc.Client, id int) error {
-
-	err := con.Call("scheduler.jobs.definition", id, nil)
-
-	return err
-}
-
-// ******************
 
 type jobsList struct {
 }
@@ -157,7 +57,7 @@ func (l jobsList) ValidateArgs(processedArgs []string, args []string) bool {
 
 func (l jobsList) Exec(con *xmlrpc.Client, processedArgs []string, args []string) error {
 
-	ret, err := LavaJobsList(con)
+	ret, err := lava.LavaJobsList(con)
 	if err != nil {
 		return err
 	}
@@ -239,7 +139,7 @@ func (j jobsShow) Exec(con *xmlrpc.Client, processedArgs []string, args []string
 	if err != nil {
 		return err
 	}
-	ret, err := LavaJobsShow(con, id)
+	ret, err := lava.LavaJobsShow(con, id)
 	if err != nil {
 		return err
 	}
@@ -302,7 +202,7 @@ func (j jobsDefinition) Exec(con *xmlrpc.Client, processedArgs []string, args []
 	if err != nil {
 		return err
 	}
-	ret, err := LavaJobsDefinition(con, id)
+	ret, err := lava.LavaJobsDefinition(con, id)
 	if err != nil {
 		return err
 	}
@@ -366,7 +266,7 @@ func (j jobsValidate) Exec(con *xmlrpc.Client, processedArgs []string, args []st
 		return fmt.Errorf("Failed to read file: #%v ", err)
 	}
 
-	ret, err := LavaJobsValidate(con, string(yamlFile),
+	ret, err := lava.LavaJobsValidate(con, string(yamlFile),
 		isStrict != nil && isStrict.Value.String() == "true")
 	if err != nil {
 		return err
@@ -407,7 +307,7 @@ func (j jobsSubmit) Exec(con *xmlrpc.Client, processedArgs []string, args []stri
 		return fmt.Errorf("Failed to read file: #%v ", err)
 	}
 
-	ret, err := LavaJobsSubmit(con, string(yamlFile))
+	ret, err := lava.LavaJobsSubmit(con, string(yamlFile))
 	if err != nil {
 		return err
 	}
@@ -440,7 +340,7 @@ func (j jobsCancel) Exec(con *xmlrpc.Client, processedArgs []string, args []stri
 	if err != nil {
 		return err
 	}
-	err = LavaJobsCancel(con, id)
+	err = lava.LavaJobsCancel(con, id)
 
 	return err
 }

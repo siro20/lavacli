@@ -8,26 +8,9 @@ import (
 	"fmt"
 
 	"github.com/kolo/xmlrpc"
+	"github.com/siro20/lavacli/pkg/lava"
 	"gopkg.in/yaml.v2"
 )
-
-type LavaDeviceTypesListing struct {
-	Devices   int    `xmlrpc:"devices"`
-	Installed bool   `xmlrpc:"installed"`
-	Name      string `xmlrpc:"name"`
-	Template  bool   `xmlrpc:"template"`
-}
-
-func LavaDevicesTypesList(con *xmlrpc.Client, showAll bool) ([]LavaDeviceTypesListing, error) {
-	var ret []LavaDeviceTypesListing
-
-	err := con.Call("scheduler.device_types.list", showAll, &ret)
-	if err != nil {
-		return nil, err
-	}
-
-	return ret, nil
-}
 
 type devicesTypesList struct {
 }
@@ -79,7 +62,7 @@ func (l devicesTypesList) Exec(con *xmlrpc.Client, processedArgs []string, args 
 	isJson := mySet.Lookup("json")
 	showAll := mySet.Lookup("all")
 
-	ret, err := LavaDevicesTypesList(con, showAll != nil && showAll.Value.String() == "true")
+	ret, err := lava.LavaDevicesTypesList(con, showAll != nil && showAll.Value.String() == "true")
 	if err != nil {
 		return err
 	}

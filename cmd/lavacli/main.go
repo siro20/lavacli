@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/kolo/xmlrpc"
+	"github.com/siro20/lavacli/pkg/lava"
 )
 
 func CheckHelp(args []string) bool {
@@ -132,13 +133,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	var c configIndentity
+	var c lava.LavaConfigIndentity
 	var u string
 	var con *xmlrpc.Client
 	u = *uri
 	if os.Args[1] != "identities" {
-		var err error
-		configs := GetConf()
+		configs, err := lava.LavaGetConf()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", err)
+			os.Exit(1)
+		}
 		found := false
 		for k, v := range configs {
 			if k == *identity {

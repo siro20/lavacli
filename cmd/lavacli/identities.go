@@ -7,99 +7,8 @@ import (
 	"fmt"
 
 	"github.com/kolo/xmlrpc"
+	"github.com/siro20/lavacli/pkg/lava"
 )
-
-type LavaIndentity struct {
-	Name     string
-	Token    string
-	Uri      string
-	Username string
-	Proxy    string
-}
-
-func LavaIdentitiesList() ([]LavaIndentity, error) {
-	var ret []LavaIndentity
-	configs := GetConf()
-
-	for k, v := range configs {
-		ret = append(ret, LavaIndentity{
-			k,
-			v.Token,
-			v.Uri,
-			v.Username,
-			v.Proxy,
-		})
-	}
-
-	return ret, nil
-}
-
-func LavaIdentitiesAdd(id LavaIndentity) error {
-	configs := GetConf()
-
-	for k, _ := range configs {
-		if k == id.Name {
-			return fmt.Errorf("id %s is already in config", id.Name)
-		}
-	}
-	if id.Uri == "" {
-		return fmt.Errorf("Must specify URI in identity")
-	}
-	var c configIndentity
-	c.Uri = id.Uri
-	c.Token = id.Token
-	c.Username = id.Username
-	c.Proxy = id.Proxy
-
-	configs[id.Name] = c
-
-	SetConf(configs)
-
-	return nil
-}
-
-func LavaIdentitiesShow(name string) (*LavaIndentity, error) {
-	var ret LavaIndentity
-	configs := GetConf()
-
-	for k, v := range configs {
-		if k == name {
-			ret = LavaIndentity{
-				k,
-				v.Token,
-				v.Uri,
-				v.Username,
-				v.Proxy,
-			}
-			return &ret, nil
-		}
-	}
-
-	return nil, fmt.Errorf("id %s not found in config", name)
-}
-
-func LavaIdentitiesDelete(name string) error {
-	configs := GetConf()
-
-	for k, _ := range configs {
-		if k == name {
-
-			new := map[string]configIndentity{}
-			for k2, v2 := range configs {
-				if k2 != name {
-					new[k2] = v2
-				}
-			}
-
-			SetConf(new)
-			return nil
-		}
-	}
-
-	return fmt.Errorf("id %s not found in config", name)
-}
-
-// *****************
 
 type list struct {
 }
@@ -116,7 +25,7 @@ func (l list) ValidateArgs(processedArgs []string, args []string) bool {
 }
 
 func (l list) Exec(unused *xmlrpc.Client, processedArgs []string, args []string) error {
-	ids, err := LavaIdentitiesList()
+	ids, err := lava.LavaIdentitiesList()
 	if err != nil {
 		return err
 	}
@@ -191,7 +100,7 @@ func (a add) Exec(unused *xmlrpc.Client, processedArgs []string, args []string) 
 		return fmt.Errorf("Must specify URI")
 	}
 
-	var i LavaIndentity
+	var i lava.LavaIndentity
 	i.Name = id
 	i.Uri = uri.Value.String()
 	if token != nil {
@@ -204,7 +113,7 @@ func (a add) Exec(unused *xmlrpc.Client, processedArgs []string, args []string) 
 		i.Proxy = proxy.Value.String()
 	}
 
-	return LavaIdentitiesAdd(i)
+	return lava.LavaIdentitiesAdd(i)
 }
 
 type show struct {
@@ -221,10 +130,12 @@ func (s show) ValidateArgs(processedArgs []string, args []string) bool {
 
 	id := args[0]
 
-	configs := GetConf()
-	for k, _ := range configs {
-		if k == id {
-			return true
+	configs, err := lava.LavaGetConf()
+	if err != nil {
+		for k, _ := range configs {
+			if k == id {
+				return true
+			}
 		}
 	}
 
@@ -234,7 +145,7 @@ func (s show) ValidateArgs(processedArgs []string, args []string) bool {
 func (s show) Exec(unused *xmlrpc.Client, processedArgs []string, args []string) error {
 	id := args[0]
 
-	v, err := LavaIdentitiesShow(id)
+	v, err := lava.LavaIdentitiesShow(id)
 	if err != nil {
 		return err
 	}
@@ -267,10 +178,13 @@ func (d del) ValidateArgs(processedArgs []string, args []string) bool {
 
 	id := args[0]
 
-	configs := GetConf()
-	for k, _ := range configs {
-		if k == id {
-			return true
+	configs, err := lava.LavaGetConf()
+
+	if err != nil {
+		for k, _ := range configs {
+			if k == id {
+				return true
+			}
 		}
 	}
 
@@ -280,7 +194,7 @@ func (d del) ValidateArgs(processedArgs []string, args []string) bool {
 func (d del) Exec(unused *xmlrpc.Client, processedArgs []string, args []string) error {
 	id := args[0]
 
-	return LavaIdentitiesDelete(id)
+	return lava.LavaIdentitiesDelete(id)
 }
 
 var i group = group{
