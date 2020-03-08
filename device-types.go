@@ -58,6 +58,9 @@ func (l devicesTypesList) ValidateArgs(processedArgs []string, args []string) bo
 	if len(args) > 2 {
 		return false
 	}
+	if CheckHelp(args) {
+		return false
+	}
 	mySet := l.GetParser()
 	mySet.Parse(args)
 

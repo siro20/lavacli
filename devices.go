@@ -83,6 +83,9 @@ func (l devicesList) ValidateArgs(processedArgs []string, args []string) bool {
 	if len(args) > 1 {
 		return false
 	}
+	if CheckHelp(args) {
+		return false
+	}
 	mySet := l.GetParser()
 	mySet.Parse(args)
 
@@ -153,6 +156,9 @@ func (d devicesShow) Help(processedArgs []string, args []string) string {
 
 func (d devicesShow) ValidateArgs(processedArgs []string, args []string) bool {
 	if len(args) > 2 {
+		return false
+	}
+	if CheckHelp(args) {
 		return false
 	}
 	mySet := d.GetParser()

@@ -100,6 +100,9 @@ func (r resultsShow) ValidateArgs(processedArgs []string, args []string) bool {
 	if len(args) > 2 {
 		return false
 	}
+	if CheckHelp(args) {
+		return false
+	}
 	mySet := r.GetParser()
 	mySet.Parse(args)
 

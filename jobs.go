@@ -143,6 +143,9 @@ func (l jobsList) ValidateArgs(processedArgs []string, args []string) bool {
 	if len(args) > 1 {
 		return false
 	}
+	if CheckHelp(args) {
+		return false
+	}
 	mySet := l.GetParser()
 	mySet.Parse(args)
 
@@ -215,6 +218,9 @@ func (j jobsShow) ValidateArgs(processedArgs []string, args []string) bool {
 	if len(args) > 2 {
 		return false
 	}
+	if CheckHelp(args) {
+		return false
+	}
 	mySet := j.GetParser()
 	mySet.Parse(args)
 
@@ -284,7 +290,9 @@ func (j jobsDefinition) ValidateArgs(processedArgs []string, args []string) bool
 	if len(args) != 1 {
 		return false
 	}
-
+	if CheckHelp(args) {
+		return false
+	}
 	return true
 }
 
@@ -330,7 +338,9 @@ func (j jobsValidate) ValidateArgs(processedArgs []string, args []string) bool {
 	if len(args) != 1 {
 		return false
 	}
-
+	if CheckHelp(args) {
+		return false
+	}
 	mySet := j.GetParser()
 	mySet.Parse(args)
 
@@ -380,7 +390,9 @@ func (j jobsSubmit) ValidateArgs(processedArgs []string, args []string) bool {
 	if len(args) != 1 {
 		return false
 	}
-
+	if CheckHelp(args) {
+		return false
+	}
 	return true
 }
 
@@ -416,7 +428,9 @@ func (j jobsCancel) ValidateArgs(processedArgs []string, args []string) bool {
 	if len(args) != 1 {
 		return false
 	}
-
+	if CheckHelp(args) {
+		return false
+	}
 	return true
 }
 

@@ -13,6 +13,15 @@ import (
 	"github.com/kolo/xmlrpc"
 )
 
+func CheckHelp(args []string) bool {
+	for i := range args {
+		if args[i] == "--help" {
+			return true
+		}
+	}
+	return false
+}
+
 func MakeHelp(cmds map[string]command, processedArgs []string, args []string, optarg string) string {
 	s := "usage: "
 	for _, k := range processedArgs {
