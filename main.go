@@ -77,10 +77,11 @@ type command interface {
 
 var lavacli group = group{
 	map[string]command{
-		"identities": i,
-		"devices":    d,
-		"jobs":       j,
-		"results":    r,
+		"identities":   i,
+		"devices":      d,
+		"jobs":         j,
+		"results":      r,
+		"device-types": t,
 	},
 }
 
