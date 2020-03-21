@@ -3,6 +3,7 @@
 package lava
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -85,14 +86,30 @@ func (c LavaConnection) LavaJobsValidate(def string, strict bool) (LavaJobErrors
 	return ret, nil
 }
 
-type LavaJobIDs []int
+func (c LavaConnection) LavaJobsSubmit(def string) ([]int, error) {
+	var ret []int
+	var xmlRet interface{}
 
-func (c LavaConnection) LavaJobsSubmit(def string) (LavaJobIDs, error) {
-	var ret LavaJobIDs
-
-	err := c.con.Call("scheduler.jobs.submit", def, &ret)
+	err := c.con.Call("scheduler.jobs.submit", def, &xmlRet)
 	if err != nil {
 		return nil, err
+	}
+
+	switch x := xmlRet.(type) {
+	case []int:
+		for _, i := range x {
+			ret = append(ret, int(x[i]))
+		}
+	case []int64:
+		for _, i := range x {
+			ret = append(ret, int(x[i]))
+		}
+	case int:
+		ret = append(ret, int(x))
+	case int64:
+		ret = append(ret, int(x))
+	default:
+		return nil, fmt.Errorf("Got unexpected type: %T", x)
 	}
 
 	return ret, nil
