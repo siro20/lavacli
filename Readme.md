@@ -18,6 +18,7 @@ The following functions are implemented:
 * identities delete
 * devices list
 * devices show
+* devices tags list
 * device-types list
 * jobs list
 * jobs show

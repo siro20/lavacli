@@ -46,3 +46,14 @@ func (c LavaConnection) LavaDevicesShow(hostname string) (*LavaDevice, error) {
 
 	return &ret, nil
 }
+
+func (c LavaConnection) LavaDevicesTagsList(hostname string) ([]string, error) {
+	var ret []string
+
+	err := c.con.Call("scheduler.devices.tags.list", hostname, &ret)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret, nil
+}
