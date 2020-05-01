@@ -185,7 +185,7 @@ func (l devicesTagsList) GetParser() *flag.FlagSet {
 
 func (l devicesTagsList) Help(processedArgs []string, args []string) string {
 	mySet := l.GetParser()
-	s := "hostname "
+	s := "<hostname> "
 	mySet.VisitAll(func(f *flag.Flag) {
 		s += "[--" + f.Name + " " + f.Usage + "] "
 	})
@@ -245,9 +245,101 @@ func (l devicesTagsList) Exec(con *lava.LavaConnection, processedArgs []string, 
 	return nil
 }
 
+type devicesTagsAdd struct {
+}
+
+func (l devicesTagsAdd) GetParser() *flag.FlagSet {
+	mySet := flag.NewFlagSet("", flag.ExitOnError)
+
+	return mySet
+}
+
+func (l devicesTagsAdd) Help(processedArgs []string, args []string) string {
+	mySet := l.GetParser()
+	s := "<hostname> <name>"
+	mySet.VisitAll(func(f *flag.Flag) {
+		s += "[--" + f.Name + " " + f.Usage + "] "
+	})
+	return MakeHelp(nil, processedArgs, args, s)
+}
+
+func (l devicesTagsAdd) ValidateArgs(processedArgs []string, args []string) bool {
+	if len(args) > 2 {
+		return false
+	}
+	if CheckHelp(args) {
+		return false
+	}
+	mySet := l.GetParser()
+	mySet.Parse(args)
+
+	if len(mySet.Args()) == 0 {
+		return false
+	}
+	return true
+}
+
+func (l devicesTagsAdd) Exec(con *lava.LavaConnection, processedArgs []string, args []string) error {
+
+	mySet := l.GetParser()
+	mySet.Parse(args)
+
+	hostname := mySet.Args()[0]
+	name := mySet.Args()[1]
+
+	return con.LavaDevicesTagsAdd(hostname, name)
+}
+
+type devicesTagsDelete struct {
+}
+
+func (l devicesTagsDelete) GetParser() *flag.FlagSet {
+	mySet := flag.NewFlagSet("", flag.ExitOnError)
+
+	return mySet
+}
+
+func (l devicesTagsDelete) Help(processedArgs []string, args []string) string {
+	mySet := l.GetParser()
+	s := "<hostname> <name>"
+	mySet.VisitAll(func(f *flag.Flag) {
+		s += "[--" + f.Name + " " + f.Usage + "] "
+	})
+	return MakeHelp(nil, processedArgs, args, s)
+}
+
+func (l devicesTagsDelete) ValidateArgs(processedArgs []string, args []string) bool {
+	if len(args) > 2 {
+		return false
+	}
+	if CheckHelp(args) {
+		return false
+	}
+	mySet := l.GetParser()
+	mySet.Parse(args)
+
+	if len(mySet.Args()) == 0 {
+		return false
+	}
+	return true
+}
+
+func (l devicesTagsDelete) Exec(con *lava.LavaConnection, processedArgs []string, args []string) error {
+
+	mySet := l.GetParser()
+	mySet.Parse(args)
+
+	hostname := mySet.Args()[0]
+	name := mySet.Args()[1]
+
+	return con.LavaDevicesTagsDelete(hostname, name)
+}
+
 var tags group = group{
 	map[string]command{
-		"list": devicesTagsList{},
+		"list":   devicesTagsList{},
+		"add":    devicesTagsAdd{},
+		"delete": devicesTagsDelete{},
 	},
 }
 

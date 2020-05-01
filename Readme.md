@@ -19,6 +19,8 @@ The following functions are implemented:
 * devices list
 * devices show
 * devices tags list
+* devices tags delete
+* devices tags add
 * device-types list
 * jobs list
 * jobs show

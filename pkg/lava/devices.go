@@ -57,3 +57,19 @@ func (c LavaConnection) LavaDevicesTagsList(hostname string) ([]string, error) {
 
 	return ret, nil
 }
+
+func (c LavaConnection) LavaDevicesTagsDelete(hostname string, name string) error {
+	var args []interface{}
+	args = append(args, hostname)
+	args = append(args, name)
+
+	return c.con.Call("scheduler.devices.tags.delete", args, nil)
+}
+
+func (c LavaConnection) LavaDevicesTagsAdd(hostname string, name string) error {
+	var args []interface{}
+	args = append(args, hostname)
+	args = append(args, name)
+
+	return c.con.Call("scheduler.devices.tags.add", args, nil)
+}
