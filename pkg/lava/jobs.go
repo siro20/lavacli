@@ -16,10 +16,16 @@ type LavaJobsListing struct {
 	Submitter   string `xmlrpc:"submitter"`
 }
 
-func (c LavaConnection) LavaJobsList() ([]LavaJobsListing, error) {
+func (c LavaConnection) LavaJobsList(state string, health string, start int, limit int) ([]LavaJobsListing, error) {
 	var ret []LavaJobsListing
 
-	err := c.con.Call("scheduler.jobs.list", nil, &ret)
+	var args []interface{}
+	args = append(args, state)
+	args = append(args, health)
+	args = append(args, start)
+	args = append(args, limit)
+
+	err := c.con.Call("scheduler.jobs.list", args, &ret)
 	if err != nil {
 		return nil, err
 	}

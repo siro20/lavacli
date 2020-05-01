@@ -55,7 +55,7 @@ if err != nil {
 3. List jobs:
 
 ```
-	ret, err := c.LavaJobsList()
+	ret, err := c.LavaJobsList("", "", 0, 25)
 	if err != nil {
 		return err
 	}

@@ -21,10 +21,18 @@ type jobsList struct {
 func (l jobsList) GetParser() *flag.FlagSet {
 	var yaml bool
 	var json bool
+	var state string
+	var health string
+	var start int
+	var limit int
 
 	mySet := flag.NewFlagSet("", flag.ExitOnError)
 	mySet.BoolVar(&yaml, "yaml", false, "print as yaml")
 	mySet.BoolVar(&json, "json", false, "print as json")
+	mySet.StringVar(&state, "state", "", "[SUBMITTED, SCHEDULING, SCHEDULED, RUNNING, CANCELING, FINISHED]")
+	mySet.StringVar(&health, "health", "", "[UNKNOWN, COMPLETE, INCOMPLETE, CANCELED]")
+	mySet.IntVar(&start, "start", 0, "Start at offset")
+	mySet.IntVar(&limit, "limit", 25, "Limit to #count jobs")
 
 	return mySet
 }
@@ -39,7 +47,7 @@ func (l jobsList) Help(processedArgs []string, args []string) string {
 }
 
 func (l jobsList) ValidateArgs(processedArgs []string, args []string) bool {
-	if len(args) > 1 {
+	if len(args) > 5 {
 		return false
 	}
 	if CheckHelp(args) {
@@ -56,13 +64,27 @@ func (l jobsList) ValidateArgs(processedArgs []string, args []string) bool {
 
 func (l jobsList) Exec(con *lava.LavaConnection, processedArgs []string, args []string) error {
 
-	ret, err := con.LavaJobsList()
+	mySet := l.GetParser()
+	mySet.Parse(args)
+
+	state := mySet.Lookup("state")
+	health := mySet.Lookup("health")
+
+	start, err := strconv.Atoi(mySet.Lookup("start").Value.String())
 	if err != nil {
 		return err
 	}
 
-	mySet := l.GetParser()
-	mySet.Parse(args)
+	limit, err := strconv.Atoi(mySet.Lookup("limit").Value.String())
+	if err != nil {
+		return err
+	}
+
+	ret, err := con.LavaJobsList(state.Value.String(),
+		health.Value.String(), start, limit)
+	if err != nil {
+		return err
+	}
 
 	isYaml := mySet.Lookup("yaml")
 	isJson := mySet.Lookup("json")
@@ -80,9 +102,9 @@ func (l jobsList) Exec(con *lava.LavaConnection, processedArgs []string, args []
 		}
 		fmt.Println(string(d))
 	} else {
-		fmt.Printf("jobs:\n")
+		fmt.Printf("Jobs (from %d to %d):\n", start+1, limit)
 		for _, v := range ret {
-			fmt.Printf("* %d %s,%s [%s] (%s) - %s\n", v.ID, v.State, v.Health, v.Submitter, v.Description, v.DeviceType)
+			fmt.Printf("* %d: %s,%s [%s] (%s) - %s\n", v.ID, v.State, v.Health, v.Submitter, v.Description, v.DeviceType)
 		}
 	}
 
