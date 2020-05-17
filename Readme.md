@@ -23,6 +23,7 @@ The following functions are implemented:
 * devices tags add
 * device-types list
 * jobs list
+* jobs logs
 * jobs show
 * jobs definition
 * jobs validate

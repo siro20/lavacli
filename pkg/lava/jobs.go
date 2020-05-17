@@ -3,8 +3,11 @@
 package lava
 
 import (
+	"encoding/base64"
 	"fmt"
 	"time"
+
+	"gopkg.in/yaml.v2"
 )
 
 type LavaJobsListing struct {
@@ -126,4 +129,55 @@ func (c LavaConnection) LavaJobsCancel(id int) error {
 	err := c.con.Call("scheduler.jobs.definition", id, nil)
 
 	return err
+}
+
+type LavaJobLogsDecoded struct {
+	DateTime string      `yaml:"dt"`
+	Level    string      `yaml:"lvl"`
+	Message  interface{} `yaml:"msg"`
+}
+
+type LavaJobsLogs struct {
+	Finished bool
+	Data     string
+	Decoded  []LavaJobLogsDecoded
+}
+
+func (c LavaConnection) LavaJobsLogs(id int, raw bool) (*LavaJobsLogs, error) {
+	var ret []interface{}
+	var ret2 LavaJobsLogs
+
+	err := c.con.Call("scheduler.jobs.logs", id, &ret)
+	if err != nil {
+		return nil, err
+	}
+	if len(ret) != 2 {
+		return nil, fmt.Errorf("Unexpected server response")
+	}
+	finished, ok := ret[0].(bool)
+	if !ok {
+		return nil, fmt.Errorf("Invalid server response")
+	}
+	ret2.Finished = finished
+
+	data, ok := ret[1].(string)
+	if !ok {
+		return nil, fmt.Errorf("Invalid server response")
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(data)
+	if err != nil {
+		return nil, err
+	}
+	ret2.Data = string(decoded)
+
+	if raw {
+		return &ret2, nil
+	}
+
+	err = yaml.Unmarshal(decoded, &ret2.Decoded)
+	if err != nil {
+		return nil, err
+	}
+	return &ret2, nil
 }

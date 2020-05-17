@@ -366,9 +366,115 @@ func (j jobsCancel) Exec(con *lava.LavaConnection, processedArgs []string, args 
 	return err
 }
 
+type jobsLogs struct {
+}
+
+func (j jobsLogs) GetParser() *flag.FlagSet {
+	var raw bool
+
+	mySet := flag.NewFlagSet("", flag.ExitOnError)
+	mySet.BoolVar(&raw, "raw", false, "raw mode")
+
+	return mySet
+}
+
+func (j jobsLogs) Help(processedArgs []string, args []string) string {
+	mySet := j.GetParser()
+	s := ""
+	mySet.VisitAll(func(f *flag.Flag) {
+		s += "[--" + f.Name + " " + f.Usage + "] "
+	})
+	s += "<id> "
+	return MakeHelp(nil, processedArgs, args, s)
+}
+
+func (j jobsLogs) ValidateArgs(processedArgs []string, args []string) bool {
+	if len(args) > 2 {
+		return false
+	}
+	if CheckHelp(args) {
+		return false
+	}
+	mySet := j.GetParser()
+	mySet.Parse(args)
+
+	if len(mySet.Args()) != 1 {
+		return false
+	}
+	return true
+}
+
+var Reset = "\033[0m"
+var Red = "\033[31m"
+var Green = "\033[32m"
+var Yellow = "\033[33m"
+var Blue = "\033[34m"
+var Purple = "\033[35m"
+var Cyan = "\033[36m"
+var Gray = "\033[37m"
+var White = "\033[97m"
+
+func (j jobsLogs) Exec(con *lava.LavaConnection, processedArgs []string, args []string) error {
+
+	mySet := j.GetParser()
+	mySet.Parse(args)
+
+	isRaw := mySet.Lookup("raw")
+	id, err := strconv.Atoi(mySet.Args()[0])
+	if err != nil {
+		return err
+	}
+
+	ret, err := con.LavaJobsLogs(id, isRaw != nil && isRaw.Value.String() == "true")
+	if err != nil {
+		return err
+	}
+	if isRaw != nil && isRaw.Value.String() == "true" {
+		fmt.Printf("%s\n", ret.Data)
+	} else {
+		for i := range ret.Decoded {
+			lvl := ret.Decoded[i].Level
+			colorStart := ""
+			colorStop := ""
+			if lvl == "feedback" {
+				lvl = ""
+				colorStart = Yellow
+				colorStop = Reset
+			} else if lvl == "target" {
+				lvl = ""
+				colorStart = Green
+				colorStop = Reset
+			} else if lvl == "results" {
+				lvl = ""
+				colorStart = Blue
+				colorStop = Reset
+			} else if lvl == "error" {
+				lvl = ""
+				colorStart = Red
+				colorStop = Reset
+			} else if lvl == "debug" {
+				lvl = ""
+				colorStart = Gray
+				colorStop = Reset
+			}
+			fmt.Printf("%s: %s %s %s\n", ret.Decoded[i].DateTime,
+				colorStart,
+				ret.Decoded[i].Message,
+				colorStop)
+		}
+	}
+
+	//for k, v := range ret {
+	//	fmt.Printf("%s: %v\n", k, v)
+	//}
+
+	return nil
+}
+
 var j group = group{
 	map[string]command{
 		"list":       jobsList{},
+		"logs":       jobsLogs{},
 		"show":       jobsShow{},
 		"definition": jobsDefinition{},
 		"validate":   jobsValidate{},
