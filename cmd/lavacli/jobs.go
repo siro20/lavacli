@@ -366,6 +366,34 @@ func (j jobsCancel) Exec(con *lava.LavaConnection, processedArgs []string, args 
 	return err
 }
 
+type jobsFailstruct {
+}
+
+func (j jobsFailstruct) Help(processedArgs []string, args []string) string {
+	return MakeHelp(nil, processedArgs, args, "<id>")
+}
+
+func (j jobsFailstruct) ValidateArgs(processedArgs []string, args []string) bool {
+	if len(args) != 1 {
+		return false
+	}
+	if CheckHelp(args) {
+		return false
+	}
+	return true
+}
+
+func (j jobsFailstruct) Exec(con *lava.LavaConnection, processedArgs []string, args []string) error {
+
+	id, err := strconv.Atoi(args[0])
+	if err != nil {
+		return err
+	}
+	err = con.LavaJobsFail(id)
+
+	return err
+}
+
 type jobsLogs struct {
 }
 
@@ -480,5 +508,6 @@ var j group = group{
 		"validate":   jobsValidate{},
 		"submit":     jobsSubmit{},
 		"cancel":     jobsCancel{},
+		"fail":       jobsFail{},
 	},
 }

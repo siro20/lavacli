@@ -29,6 +29,7 @@ The following functions are implemented:
 * jobs validate
 * jobs submit
 * jobs cancel
+* jobs fail
 * results (testjob only)
 
 ## Building the cli

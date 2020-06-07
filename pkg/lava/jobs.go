@@ -126,7 +126,14 @@ func (c LavaConnection) LavaJobsSubmit(def string) ([]int, error) {
 
 func (c LavaConnection) LavaJobsCancel(id int) error {
 
-	err := c.con.Call("scheduler.jobs.definition", id, nil)
+	err := c.con.Call("scheduler.jobs.cancel", id, nil)
+
+	return err
+}
+
+func (c LavaConnection) LavaJobsFail(id int) error {
+
+	err := c.con.Call("scheduler.jobs.fail", id, nil)
 
 	return err
 }
