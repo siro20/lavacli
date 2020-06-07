@@ -366,14 +366,14 @@ func (j jobsCancel) Exec(con *lava.LavaConnection, processedArgs []string, args 
 	return err
 }
 
-type jobsFailstruct {
+type jobsFail struct {
 }
 
-func (j jobsFailstruct) Help(processedArgs []string, args []string) string {
+func (j jobsFail) Help(processedArgs []string, args []string) string {
 	return MakeHelp(nil, processedArgs, args, "<id>")
 }
 
-func (j jobsFailstruct) ValidateArgs(processedArgs []string, args []string) bool {
+func (j jobsFail) ValidateArgs(processedArgs []string, args []string) bool {
 	if len(args) != 1 {
 		return false
 	}
@@ -383,7 +383,7 @@ func (j jobsFailstruct) ValidateArgs(processedArgs []string, args []string) bool
 	return true
 }
 
-func (j jobsFailstruct) Exec(con *lava.LavaConnection, processedArgs []string, args []string) error {
+func (j jobsFail) Exec(con *lava.LavaConnection, processedArgs []string, args []string) error {
 
 	id, err := strconv.Atoi(args[0])
 	if err != nil {
