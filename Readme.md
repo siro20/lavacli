@@ -22,6 +22,8 @@ The following functions are implemented:
 * devices tags delete
 * devices tags add
 * device-types list
+* device-types template set
+* device-types template get
 * jobs list
 * jobs logs
 * jobs show
