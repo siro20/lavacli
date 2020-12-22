@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"strings"
 
 	"github.com/siro20/lavacli/pkg/lava"
 	"gopkg.in/yaml.v2"
@@ -187,8 +188,11 @@ func (l devicesTypesSet) Exec(con *lava.LavaConnection, processedArgs []string, 
 	template := mySet.Args()[1]
 
 	templateFile, err := ioutil.ReadFile(template)
-	if err != nil {
-		return fmt.Errorf("Failed to read file: #%v ", err)
+	if err != nil && !strings.HasSuffix(template, ".yaml") {
+		templateFile, err = ioutil.ReadFile(template + ".yaml")
+		if err != nil {
+			return fmt.Errorf("Failed to read file: #%v ", err)
+		}
 	}
 
 	err = con.LavaDevicesTypesTemplateSet(name, string(templateFile))
@@ -296,8 +300,11 @@ func (l healthCheckSet) Exec(con *lava.LavaConnection, processedArgs []string, a
 	template := mySet.Args()[1]
 
 	templateFile, err := ioutil.ReadFile(template)
-	if err != nil {
-		return fmt.Errorf("Failed to read file: #%v ", err)
+	if err != nil && !strings.HasSuffix(template, ".yaml") {
+		templateFile, err = ioutil.ReadFile(template + ".yaml")
+		if err != nil {
+			return fmt.Errorf("Failed to read file: #%v ", err)
+		}
 	}
 
 	err = con.LavaDevicesTypesHealthCheckSet(name, string(templateFile))
