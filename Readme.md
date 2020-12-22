@@ -24,6 +24,8 @@ The following functions are implemented:
 * device-types list
 * device-types template set
 * device-types template get
+* device-types health-check set
+* device-types health-check get
 * jobs list
 * jobs logs
 * jobs show
