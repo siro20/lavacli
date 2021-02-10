@@ -35,6 +35,8 @@ type LavaResult []struct {
 		Repository string `yaml:"repository,omitempty" json:"repository,omitempty"`
 		CommitID   string `yaml:"commit_id,omitempty" json:"commit_id,omitempty"`
 		Path       string `yaml:"path,omitempty" json:"path,omitempty"`
+		ErrorMsg   string `yaml:"error_msg,omitempty" json:"error_msg,omitempty"`
+		ErrorType  string `yaml:"error_type,omitempty" json:"error_type,omitempty"`
 	} `yaml:"metadata,omitempty" json:"metadata,omitempty"`
 }
 
