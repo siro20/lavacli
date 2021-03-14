@@ -1,0 +1,11 @@
+# github.com/alecthomas/kong v0.2.16
+## explicit
+github.com/alecthomas/kong
+# github.com/kolo/xmlrpc v0.0.0-20201022064351-38db28db192b
+## explicit
+github.com/kolo/xmlrpc
+# github.com/pkg/errors v0.8.1
+github.com/pkg/errors
+# gopkg.in/yaml.v2 v2.4.0
+## explicit
+gopkg.in/yaml.v2
