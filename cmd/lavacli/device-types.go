@@ -18,7 +18,7 @@ type listDeviceTypesCmd struct {
 }
 
 func (c *listDeviceTypesCmd) Run(ctx *context) error {
-	ret, err := ctx.Con.LavaDevicesTypesList(c.All)
+	ret, err := ctx.LavaCon.DevicesTypesList(c.All)
 	if err != nil {
 		return err
 	}
@@ -51,7 +51,7 @@ type getTemplateCmd struct {
 
 func (c *getTemplateCmd) Run(ctx *context) error {
 
-	ret, err := ctx.Con.LavaDevicesTypesTemplateGet(c.Name)
+	ret, err := ctx.LavaCon.DevicesTypesTemplateGet(c.Name)
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func (c *setTemplateCmd) Run(ctx *context) error {
 		}
 	}
 
-	err = ctx.Con.LavaDevicesTypesTemplateSet(c.Name, string(templateFile))
+	err = ctx.LavaCon.DevicesTypesTemplateSet(c.Name, string(templateFile))
 
 	return err
 }
@@ -86,7 +86,7 @@ type getHealthCheckCmd struct {
 
 func (c *getHealthCheckCmd) Run(ctx *context) error {
 
-	ret, err := ctx.Con.LavaDevicesTypesHealthCheckGet(c.Name)
+	ret, err := ctx.LavaCon.DevicesTypesHealthCheckGet(c.Name)
 	if err != nil {
 		return err
 	}
@@ -110,7 +110,7 @@ func (c *setHealthCheckCmd) Run(ctx *context) error {
 		}
 	}
 
-	err = ctx.Con.LavaDevicesTypesHealthCheckSet(c.Name, string(healthFile))
+	err = ctx.LavaCon.DevicesTypesHealthCheckSet(c.Name, string(healthFile))
 
 	return err
 }

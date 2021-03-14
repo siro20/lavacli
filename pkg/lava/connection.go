@@ -10,40 +10,53 @@ import (
 	"github.com/kolo/xmlrpc"
 )
 
-type LavaConnection struct {
+// ConnectionOptions allows to pass additional parameters
+type ConnectionOptions struct {
+	Transport *http.Transport
+}
+
+// DefaultOptions must be passed as argument to the Connect.. methods if no overwrites are made
+var DefaultOptions = ConnectionOptions{
+	Transport: &http.Transport{},
+}
+
+// Connection holds metadata used to communicate with the LAVA XMLRPC server
+type Connection struct {
 	con   *xmlrpc.Client
 	proxy string
 	uri   string
+	opt   ConnectionOptions
 }
 
-func LavaConnectByUri(uri string, proxy string) (*LavaConnection, error) {
-	var ret LavaConnection
-	tr := http.Transport{}
-
+// ConnectByURI connects to an LAVA XMLRPC server using the provided URI, proxy and transport
+func ConnectByURI(uri string, proxy string, opt ConnectionOptions) (*Connection, error) {
+	var ret Connection
 	if proxy != "" {
 		u, err := url.Parse(proxy)
 		if err != nil {
 			return nil, err
 		}
-		tr.Proxy = http.ProxyURL(u)
+		opt.Transport.Proxy = http.ProxyURL(u)
 	}
 
-	client, err := xmlrpc.NewClient(uri, &tr)
+	client, err := xmlrpc.NewClient(uri, opt.Transport)
 	if err != nil {
 		return nil, err
 	}
 	ret.con = client
 	ret.proxy = proxy
 	ret.uri = uri
+	ret.opt = opt
 
 	return &ret, nil
 }
 
-func LavaConnectByConfigID(identityName string) (*LavaConnection, error) {
+// ConnectByConfigID connects to an LAVA XMLRPC server using the provided identity and lavacli.yaml
+func ConnectByConfigID(identityName string, opt ConnectionOptions) (*Connection, error) {
 	var u string
-	var c LavaConfigIndentity
+	var c ConfigIndentity
 
-	configs, err := LavaGetConf()
+	configs, err := GetConf()
 	if err != nil {
 		return nil, err
 	}
@@ -56,42 +69,43 @@ func LavaConnectByConfigID(identityName string) (*LavaConnection, error) {
 		}
 	}
 	if !found {
-		return nil, fmt.Errorf("Identity %s not found in lavacli.yaml\n", identityName)
+		return nil, fmt.Errorf("Identity %s not found in lavacli.yaml", identityName)
 	}
 
-	if c.Uri == "" {
-		return nil, fmt.Errorf("No URI found in config\n")
+	if c.URI == "" {
+		return nil, fmt.Errorf("No URI found in config")
 	}
 
 	if c.Username != "" && c.Token != "" {
-		url, err := url.Parse(c.Uri)
+		url, err := url.Parse(c.URI)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to parse URI: %v\n", err)
+			return nil, fmt.Errorf("Failed to parse URI: %v", err)
 		}
 		u = fmt.Sprintf("%s://%s:%s@%s%s", url.Scheme, c.Username, c.Token, url.Host, url.Path)
-	} else if c.Uri != "" {
-		u = c.Uri
+	} else if c.URI != "" {
+		u = c.URI
 	}
 
-	return LavaConnectByUri(u, c.Proxy)
+	return ConnectByURI(u, c.Proxy, opt)
 }
 
-func LavaConnectByCredentials(uri string, username string, token string, proxy string) (*LavaConnection, error) {
+// ConnectByCredentials connects to an LAVA XMLRPC server using the provided credentials
+func ConnectByCredentials(uri string, username string, token string, proxy string, opt ConnectionOptions) (*Connection, error) {
 	var u string
 
 	if uri == "" {
-		return nil, fmt.Errorf("No URI specified\n")
+		return nil, fmt.Errorf("No URI specified")
 	}
 
 	if username != "" && token != "" {
 		url, err := url.Parse(uri)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to parse URI: %v\n", err)
+			return nil, fmt.Errorf("Failed to parse URI: %v", err)
 		}
 		u = fmt.Sprintf("%s://%s:%s@%s%s", url.Scheme, username, token, url.Host, url.Path)
 	} else if uri != "" {
 		u = uri
 	}
 
-	return LavaConnectByUri(u, proxy)
+	return ConnectByURI(u, proxy, opt)
 }

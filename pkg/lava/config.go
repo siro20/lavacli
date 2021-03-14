@@ -11,15 +11,17 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type LavaConfigIndentity struct {
+//ConfigIndentity represent a field within the lavacli.yaml
+type ConfigIndentity struct {
 	Token    string `yaml:"token,omitempty"`
-	Uri      string `yaml:"uri,omitempty"`
+	URI      string `yaml:"uri,omitempty"`
 	Username string `yaml:"username,omitempty"`
 	Proxy    string `yaml:"proxy,omitempty"`
 }
 
-func LavaGetConf() (map[string]LavaConfigIndentity, error) {
-	var c map[string]LavaConfigIndentity
+// GetConf loads the lavacli.yaml
+func GetConf() (map[string]ConfigIndentity, error) {
+	var c map[string]ConfigIndentity
 
 	path := os.Getenv("XDG_CONFIG_HOME")
 	if path == "" {
@@ -47,7 +49,8 @@ func LavaGetConf() (map[string]LavaConfigIndentity, error) {
 	return c, nil
 }
 
-func LavaSetConf(c map[string]LavaConfigIndentity) error {
+// SetConf saves the config to lavacli.yaml
+func SetConf(c map[string]ConfigIndentity) error {
 	path := os.Getenv("XDG_CONFIG_HOME")
 	if path == "" {
 		usr, err := user.Current()

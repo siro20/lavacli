@@ -12,17 +12,17 @@ import (
 )
 
 type listJobsCmd struct {
-	YAML   bool   `flag:"" optional:"" help:"Print as YAML" default:false`
-	JSON   bool   `flag:"" optional:"" help:"Print as JSON" default:false`
+	YAML   bool   `flag:"" optional:"" help:"Print as YAML" default:"false"`
+	JSON   bool   `flag:"" optional:"" help:"Print as JSON" default:"false"`
 	State  string `flag:"" optional:"" help:"[SUBMITTED, SCHEDULING, SCHEDULED, RUNNING, CANCELING, FINISHED]"`
 	Health string `flag:"" optional:"" help:"[UNKNOWN, COMPLETE, INCOMPLETE, CANCELED]"`
-	Start  int    `flag:"" optional:"" help:"Start at offset" default:0`
-	Limit  int    `flag:"" optional:"" help:"Limit to #count jobs" default:25`
+	Start  int    `flag:"" optional:"" help:"Start at offset" default:"0"`
+	Limit  int    `flag:"" optional:"" help:"Limit to #count jobs" default:"25"`
 }
 
 func (c *listJobsCmd) Run(ctx *context) error {
 
-	ret, err := ctx.Con.LavaJobsList(c.State,
+	ret, err := ctx.LavaCon.JobsList(c.State,
 		c.Health, c.Start, c.Limit)
 	if err != nil {
 		return err
@@ -50,14 +50,14 @@ func (c *listJobsCmd) Run(ctx *context) error {
 }
 
 type showJobCmd struct {
-	YAML bool `flag:"" optional:"" help:"Print as YAML" default:false`
-	JSON bool `flag:"" optional:"" help:"Print as JSON" default:false`
+	YAML bool `flag:"" optional:"" help:"Print as YAML" default:"false"`
+	JSON bool `flag:"" optional:"" help:"Print as JSON" default:"false"`
 	ID   int  `arg:"" required:"" help:"Job ID"`
 }
 
 func (c *showJobCmd) Run(ctx *context) error {
 
-	ret, err := ctx.Con.LavaJobsShow(c.ID)
+	ret, err := ctx.LavaCon.JobsShow(c.ID)
 	if err != nil {
 		return err
 	}
@@ -100,7 +100,7 @@ type definitionJobCmd struct {
 
 func (c *definitionJobCmd) Run(ctx *context) error {
 
-	ret, err := ctx.Con.LavaJobsDefinition(c.ID)
+	ret, err := ctx.LavaCon.JobsDefinition(c.ID)
 	if err != nil {
 		return err
 	}
@@ -124,7 +124,7 @@ func (c *validateJobCmd) Run(ctx *context) error {
 		return fmt.Errorf("Failed to read file: #%v ", err)
 	}
 
-	ret, err := ctx.Con.LavaJobsValidate(string(yamlFile), c.Strict)
+	ret, err := ctx.LavaCon.JobsValidate(string(yamlFile), c.Strict)
 	if err != nil {
 		return err
 	}
@@ -150,7 +150,7 @@ func (c *submitJobCmd) Run(ctx *context) error {
 		return fmt.Errorf("Failed to read file: #%v ", err)
 	}
 
-	ret, err := ctx.Con.LavaJobsSubmit(string(yamlFile))
+	ret, err := ctx.LavaCon.JobsSubmit(string(yamlFile))
 	if err != nil {
 		return err
 	}
@@ -164,7 +164,7 @@ type cancelJobCmd struct {
 }
 
 func (c *cancelJobCmd) Run(ctx *context) error {
-	return ctx.Con.LavaJobsCancel(c.ID)
+	return ctx.LavaCon.JobsCancel(c.ID)
 }
 
 type logsJobCmd struct {
@@ -180,7 +180,7 @@ func (c *logsJobCmd) Run(ctx *context) error {
 	var Blue = "\033[34m"
 	var Gray = "\033[37m"
 
-	ret, err := ctx.Con.LavaJobsLogs(c.ID, c.Raw)
+	ret, err := ctx.LavaCon.JobsLogs(c.ID, c.Raw)
 	if err != nil {
 		return err
 	}

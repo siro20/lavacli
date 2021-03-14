@@ -6,25 +6,25 @@ import (
 	"fmt"
 )
 
-type LavaIndentity struct {
+type Indentity struct {
 	Name     string
 	Token    string
-	Uri      string
+	URI      string
 	Username string
 	Proxy    string
 }
 
-func LavaIdentitiesList() ([]LavaIndentity, error) {
-	var ret []LavaIndentity
-	configs, err := LavaGetConf()
+func IdentitiesList() ([]Indentity, error) {
+	var ret []Indentity
+	configs, err := GetConf()
 	if err != nil {
 		return nil, err
 	}
 	for k, v := range configs {
-		ret = append(ret, LavaIndentity{
+		ret = append(ret, Indentity{
 			k,
 			v.Token,
-			v.Uri,
+			v.URI,
 			v.Username,
 			v.Proxy,
 		})
@@ -33,8 +33,8 @@ func LavaIdentitiesList() ([]LavaIndentity, error) {
 	return ret, nil
 }
 
-func LavaIdentitiesAdd(id LavaIndentity) error {
-	configs, err := LavaGetConf()
+func IdentitiesAdd(id Indentity) error {
+	configs, err := GetConf()
 	if err != nil {
 		return err
 	}
@@ -43,32 +43,32 @@ func LavaIdentitiesAdd(id LavaIndentity) error {
 			return fmt.Errorf("id %s is already in config", id.Name)
 		}
 	}
-	if id.Uri == "" {
+	if id.URI == "" {
 		return fmt.Errorf("Must specify URI in identity")
 	}
-	var c LavaConfigIndentity
-	c.Uri = id.Uri
+	var c ConfigIndentity
+	c.URI = id.URI
 	c.Token = id.Token
 	c.Username = id.Username
 	c.Proxy = id.Proxy
 
 	configs[id.Name] = c
 
-	return LavaSetConf(configs)
+	return SetConf(configs)
 }
 
-func LavaIdentitiesShow(name string) (*LavaIndentity, error) {
-	var ret LavaIndentity
-	configs, err := LavaGetConf()
+func IdentitiesShow(name string) (*Indentity, error) {
+	var ret Indentity
+	configs, err := GetConf()
 	if err != nil {
 		return nil, err
 	}
 	for k, v := range configs {
 		if k == name {
-			ret = LavaIndentity{
+			ret = Indentity{
 				k,
 				v.Token,
-				v.Uri,
+				v.URI,
 				v.Username,
 				v.Proxy,
 			}
@@ -79,22 +79,22 @@ func LavaIdentitiesShow(name string) (*LavaIndentity, error) {
 	return nil, fmt.Errorf("id %s not found in config", name)
 }
 
-func LavaIdentitiesDelete(name string) error {
-	configs, err := LavaGetConf()
+func IdentitiesDelete(name string) error {
+	configs, err := GetConf()
 	if err != nil {
 		return err
 	}
 	for k, _ := range configs {
 		if k == name {
 
-			new := map[string]LavaConfigIndentity{}
+			new := map[string]ConfigIndentity{}
 			for k2, v2 := range configs {
 				if k2 != name {
 					new[k2] = v2
 				}
 			}
 
-			return LavaSetConf(new)
+			return SetConf(new)
 		}
 	}
 

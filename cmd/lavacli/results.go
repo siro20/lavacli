@@ -15,19 +15,19 @@ type resultsShowCmd struct {
 func (c *resultsShowCmd) Run(ctx *context) error {
 
 	if c.Yaml {
-		ret, err := ctx.Con.LavaResultsAsYAML(c.ID)
+		ret, err := ctx.LavaCon.ResultsAsYAML(c.ID)
 		if err != nil {
 			return err
 		}
 		fmt.Printf(ret)
 	} else if c.JSON {
-		ret, err := ctx.Con.LavaResultsAsJSON(c.ID)
+		ret, err := ctx.LavaCon.ResultsAsJSON(c.ID)
 		if err != nil {
 			return err
 		}
 		fmt.Printf(ret)
 	} else {
-		ret, err := ctx.Con.LavaResults(c.ID)
+		ret, err := ctx.LavaCon.Results(c.ID)
 		if err != nil {
 			return err
 		}

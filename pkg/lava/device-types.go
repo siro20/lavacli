@@ -4,15 +4,15 @@ package lava
 
 import "encoding/base64"
 
-type LavaDeviceTypesListing struct {
+type DeviceTypesListing struct {
 	Devices   int    `xmlrpc:"devices"`
 	Installed bool   `xmlrpc:"installed"`
 	Name      string `xmlrpc:"name"`
 	Template  bool   `xmlrpc:"template"`
 }
 
-func (c LavaConnection) LavaDevicesTypesList(showAll bool) ([]LavaDeviceTypesListing, error) {
-	var ret []LavaDeviceTypesListing
+func (c Connection) DevicesTypesList(showAll bool) ([]DeviceTypesListing, error) {
+	var ret []DeviceTypesListing
 
 	err := c.con.Call("scheduler.device_types.list", showAll, &ret)
 	if err != nil {
@@ -22,8 +22,8 @@ func (c LavaConnection) LavaDevicesTypesList(showAll bool) ([]LavaDeviceTypesLis
 	return ret, nil
 }
 
-func (c LavaConnection) LavaDevicesTypesTemplateSet(name string, template string) error {
-	var ret []LavaDeviceTypesListing
+func (c Connection) DevicesTypesTemplateSet(name string, template string) error {
+	var ret []DeviceTypesListing
 	var args []interface{}
 	args = append(args, name)
 	args = append(args, template)
@@ -36,7 +36,7 @@ func (c LavaConnection) LavaDevicesTypesTemplateSet(name string, template string
 	return nil
 }
 
-func (c LavaConnection) LavaDevicesTypesTemplateGet(name string) (string, error) {
+func (c Connection) DevicesTypesTemplateGet(name string) (string, error) {
 	var data string
 
 	err := c.con.Call("scheduler.device_types.get_template", name, &data)
@@ -52,8 +52,8 @@ func (c LavaConnection) LavaDevicesTypesTemplateGet(name string) (string, error)
 	return string(decoded), nil
 }
 
-func (c LavaConnection) LavaDevicesTypesHealthCheckSet(name string, template string) error {
-	var ret []LavaDeviceTypesListing
+func (c Connection) DevicesTypesHealthCheckSet(name string, template string) error {
+	var ret []DeviceTypesListing
 	var args []interface{}
 	args = append(args, name)
 	args = append(args, template)
@@ -66,7 +66,7 @@ func (c LavaConnection) LavaDevicesTypesHealthCheckSet(name string, template str
 	return nil
 }
 
-func (c LavaConnection) LavaDevicesTypesHealthCheckGet(name string) (string, error) {
+func (c Connection) DevicesTypesHealthCheckGet(name string) (string, error) {
 	var data string
 
 	err := c.con.Call("scheduler.device_types.get_health_check", name, &data)

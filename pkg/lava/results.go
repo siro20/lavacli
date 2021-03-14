@@ -8,10 +8,10 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type LavaResult []struct {
+type Result []struct {
 	Name         string `yaml:"name,omitempty" json:"name,omitempty"`
 	Result       string `yaml:"result,omitempty" json:"result,omitempty"`
-	Id           string `yaml:"id,omitempty" json:"id,omitempty"`
+	ID           string `yaml:"id,omitempty" json:"id,omitempty"`
 	Job          string `yaml:"job,omitempty" json:"job,omitempty"`
 	Level        string `yaml:"level,omitempty" json:"level,omitempty"`
 	LogLineEnd   string `yaml:"log_end_line,omitempty" json:"log_end_line,omitempty"`
@@ -40,7 +40,7 @@ type LavaResult []struct {
 	} `yaml:"metadata,omitempty" json:"metadata,omitempty"`
 }
 
-func (c LavaConnection) LavaResultsAsYAML(id int) (string, error) {
+func (c Connection) ResultsAsYAML(id int) (string, error) {
 	var ret string
 
 	err := c.con.Call("results.get_testjob_results_yaml", id, &ret)
@@ -48,9 +48,9 @@ func (c LavaConnection) LavaResultsAsYAML(id int) (string, error) {
 	return ret, err
 }
 
-func (c LavaConnection) LavaResults(id int) (LavaResult, error) {
-	var ret LavaResult
-	yamlStr, err := c.LavaResultsAsYAML(id)
+func (c Connection) Results(id int) (Result, error) {
+	var ret Result
+	yamlStr, err := c.ResultsAsYAML(id)
 
 	err = yaml.Unmarshal([]byte(yamlStr), &ret)
 	if err != nil {
@@ -59,8 +59,8 @@ func (c LavaConnection) LavaResults(id int) (LavaResult, error) {
 	return ret, nil
 }
 
-func (c LavaConnection) LavaResultsAsJSON(id int) (string, error) {
-	results, err := c.LavaResults(id)
+func (c Connection) ResultsAsJSON(id int) (string, error) {
+	results, err := c.Results(id)
 
 	d, err := json.Marshal(&results)
 	if err != nil {

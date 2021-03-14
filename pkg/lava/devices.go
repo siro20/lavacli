@@ -2,7 +2,7 @@
 
 package lava
 
-type LavaDeviceList struct {
+type DeviceList struct {
 	Hostname   string `xmlrpc:"hostname"`
 	Type       string `xmlrpc:"type"`
 	State      string `xmlrpc:"state"`
@@ -11,8 +11,8 @@ type LavaDeviceList struct {
 	Pipeline   bool   `xmlrpc:"pipeline"`
 }
 
-func (c LavaConnection) LavaDevicesList() ([]LavaDeviceList, error) {
-	var ret []LavaDeviceList
+func (c Connection) DevicesList() ([]DeviceList, error) {
+	var ret []DeviceList
 
 	err := c.con.Call("scheduler.devices.list", nil, &ret)
 	if err != nil {
@@ -22,7 +22,7 @@ func (c LavaConnection) LavaDevicesList() ([]LavaDeviceList, error) {
 	return ret, nil
 }
 
-type LavaDevice struct {
+type Device struct {
 	Description   string   `xmlrpc:"description"`
 	HasDeviceDict bool     `xmlrpc:"has_device_dict"`
 	HealthJob     bool     `xmlrpc:"health_job"`
@@ -36,8 +36,8 @@ type LavaDevice struct {
 	Pipeline      bool     `xmlrpc:"pipeline"`
 }
 
-func (c LavaConnection) LavaDevicesShow(hostname string) (*LavaDevice, error) {
-	var ret LavaDevice
+func (c Connection) DevicesShow(hostname string) (*Device, error) {
+	var ret Device
 
 	err := c.con.Call("scheduler.devices.show", hostname, &ret)
 	if err != nil {
@@ -47,7 +47,7 @@ func (c LavaConnection) LavaDevicesShow(hostname string) (*LavaDevice, error) {
 	return &ret, nil
 }
 
-func (c LavaConnection) LavaDevicesTagsList(hostname string) ([]string, error) {
+func (c Connection) DevicesTagsList(hostname string) ([]string, error) {
 	var ret []string
 
 	err := c.con.Call("scheduler.devices.tags.list", hostname, &ret)
@@ -58,7 +58,7 @@ func (c LavaConnection) LavaDevicesTagsList(hostname string) ([]string, error) {
 	return ret, nil
 }
 
-func (c LavaConnection) LavaDevicesTagsDelete(hostname string, name string) error {
+func (c Connection) DevicesTagsDelete(hostname string, name string) error {
 	var args []interface{}
 	args = append(args, hostname)
 	args = append(args, name)
@@ -66,7 +66,7 @@ func (c LavaConnection) LavaDevicesTagsDelete(hostname string, name string) erro
 	return c.con.Call("scheduler.devices.tags.delete", args, nil)
 }
 
-func (c LavaConnection) LavaDevicesTagsAdd(hostname string, name string) error {
+func (c Connection) DevicesTagsAdd(hostname string, name string) error {
 	var args []interface{}
 	args = append(args, hostname)
 	args = append(args, name)

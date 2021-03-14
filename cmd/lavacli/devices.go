@@ -15,7 +15,7 @@ type listDevicesCmd struct {
 }
 
 func (c *listDevicesCmd) Run(ctx *context) error {
-	ret, err := ctx.Con.LavaDevicesList()
+	ret, err := ctx.LavaCon.DevicesList()
 	if err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ type showDevicesCmd struct {
 
 func (c *showDevicesCmd) Run(ctx *context) error {
 
-	ret, err := ctx.Con.LavaDevicesShow(c.DeviceName)
+	ret, err := ctx.LavaCon.DevicesShow(c.DeviceName)
 	if err != nil {
 		return err
 	}
@@ -88,7 +88,7 @@ type listDevicesTagCmd struct {
 }
 
 func (c *listDevicesTagCmd) Run(ctx *context) error {
-	ret, err := ctx.Con.LavaDevicesTagsList(c.DeviceName)
+	ret, err := ctx.LavaCon.DevicesTagsList(c.DeviceName)
 	if err != nil {
 		return err
 	}
@@ -120,7 +120,7 @@ type addDevicesTagCmd struct {
 }
 
 func (c *addDevicesTagCmd) Run(ctx *context) error {
-	return ctx.Con.LavaDevicesTagsAdd(c.DeviceName, c.Name)
+	return ctx.LavaCon.DevicesTagsAdd(c.DeviceName, c.Name)
 }
 
 type deleteDeviceTagCmd struct {
@@ -129,7 +129,7 @@ type deleteDeviceTagCmd struct {
 }
 
 func (c *deleteDeviceTagCmd) Run(ctx *context) error {
-	return ctx.Con.LavaDevicesTagsDelete(c.DeviceName, c.Name)
+	return ctx.LavaCon.DevicesTagsDelete(c.DeviceName, c.Name)
 }
 
 type devicesTagsCmd struct {

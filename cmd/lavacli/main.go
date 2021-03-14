@@ -9,16 +9,16 @@ import (
 	"github.com/siro20/lavacli/pkg/lava"
 )
 
-func connect(ctx *context) (c *lava.LavaConnection, err error) {
+func connect(ctx *context) (c *lava.Connection, err error) {
 
 	if ctx.URI != "" {
-		c, err = lava.LavaConnectByUri(ctx.URI, ctx.Proxy)
+		c, err = lava.ConnectByURI(ctx.URI, ctx.Proxy, lava.DefaultOptions)
 		if err != nil {
 			err = fmt.Errorf("failed to connect by using URI %s: %v", ctx.URI, err)
 			return
 		}
 	} else {
-		c, err = lava.LavaConnectByConfigID(ctx.Profile)
+		c, err = lava.ConnectByConfigID(ctx.Profile, lava.DefaultOptions)
 		if err != nil {
 			err = fmt.Errorf("failed to connect by using identity %s: %v", ctx.Profile, err)
 			return
@@ -32,7 +32,7 @@ type context struct {
 	Profile string
 	URI     string
 	Proxy   string
-	Con     *lava.LavaConnection
+	LavaCon *lava.Connection
 }
 
 var cli struct {
@@ -63,7 +63,7 @@ func main() {
 		Proxy: cli.Proxy}
 
 	if ctx.Command() != "identities" {
-		myCtx.Con, err = connect(&myCtx)
+		myCtx.LavaCon, err = connect(&myCtx)
 		ctx.FatalIfErrorf(err)
 	}
 	// Call the Run() method of the selected parsed command.

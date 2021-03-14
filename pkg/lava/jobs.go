@@ -10,7 +10,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type LavaJobsListing struct {
+type JobsListing struct {
 	Description string `xmlrpm:"description"`
 	DeviceType  string `xmlrpc:"device_type"`
 	Health      string `xmlrpc:"health"`
@@ -19,8 +19,8 @@ type LavaJobsListing struct {
 	Submitter   string `xmlrpc:"submitter"`
 }
 
-func (c LavaConnection) LavaJobsList(state string, health string, start int, limit int) ([]LavaJobsListing, error) {
-	var ret []LavaJobsListing
+func (c Connection) JobsList(state string, health string, start int, limit int) ([]JobsListing, error) {
+	var ret []JobsListing
 
 	var args []interface{}
 	args = append(args, state)
@@ -36,7 +36,7 @@ func (c LavaConnection) LavaJobsList(state string, health string, start int, lim
 	return ret, nil
 }
 
-type LavaJobState struct {
+type JobState struct {
 	Description    string    `xmlrpc:"description"`
 	DeviceType     string    `xmlrpc:"device_type"`
 	Device         string    `xmlrpc:"device"`
@@ -55,8 +55,8 @@ type LavaJobState struct {
 	Health         string    `xmlrpc:"health"`
 }
 
-func (c LavaConnection) LavaJobsShow(id int) (*LavaJobState, error) {
-	var ret LavaJobState
+func (c Connection) JobsShow(id int) (*JobState, error) {
+	var ret JobState
 
 	err := c.con.Call("scheduler.jobs.show", id, &ret)
 	if err != nil {
@@ -66,10 +66,10 @@ func (c LavaConnection) LavaJobsShow(id int) (*LavaJobState, error) {
 	return &ret, nil
 }
 
-type LavaJobDefintion string
+type JobDefintion string
 
-func (c LavaConnection) LavaJobsDefinition(id int) (LavaJobDefintion, error) {
-	var ret LavaJobDefintion
+func (c Connection) JobsDefinition(id int) (JobDefintion, error) {
+	var ret JobDefintion
 
 	err := c.con.Call("scheduler.jobs.definition", id, &ret)
 	if err != nil {
@@ -79,10 +79,10 @@ func (c LavaConnection) LavaJobsDefinition(id int) (LavaJobDefintion, error) {
 	return ret, nil
 }
 
-type LavaJobErrors map[string]interface{}
+type JobErrors map[string]interface{}
 
-func (c LavaConnection) LavaJobsValidate(def string, strict bool) (LavaJobErrors, error) {
-	var ret LavaJobErrors
+func (c Connection) JobsValidate(def string, strict bool) (JobErrors, error) {
+	var ret JobErrors
 	var args []interface{}
 	args = append(args, def)
 	args = append(args, strict)
@@ -95,7 +95,7 @@ func (c LavaConnection) LavaJobsValidate(def string, strict bool) (LavaJobErrors
 	return ret, nil
 }
 
-func (c LavaConnection) LavaJobsSubmit(def string) ([]int, error) {
+func (c Connection) JobsSubmit(def string) ([]int, error) {
 	var ret []int
 	var xmlRet interface{}
 
@@ -124,35 +124,35 @@ func (c LavaConnection) LavaJobsSubmit(def string) ([]int, error) {
 	return ret, nil
 }
 
-func (c LavaConnection) LavaJobsCancel(id int) error {
+func (c Connection) JobsCancel(id int) error {
 
 	err := c.con.Call("scheduler.jobs.cancel", id, nil)
 
 	return err
 }
 
-func (c LavaConnection) LavaJobsFail(id int) error {
+func (c Connection) JobsFail(id int) error {
 
 	err := c.con.Call("scheduler.jobs.fail", id, nil)
 
 	return err
 }
 
-type LavaJobLogsDecoded struct {
+type JobLogsDecoded struct {
 	DateTime string      `yaml:"dt"`
 	Level    string      `yaml:"lvl"`
 	Message  interface{} `yaml:"msg"`
 }
 
-type LavaJobsLogs struct {
+type JobsLogs struct {
 	Finished bool
 	Data     string
-	Decoded  []LavaJobLogsDecoded
+	Decoded  []JobLogsDecoded
 }
 
-func (c LavaConnection) LavaJobsLogs(id int, raw bool) (*LavaJobsLogs, error) {
+func (c Connection) JobsLogs(id int, raw bool) (*JobsLogs, error) {
 	var ret []interface{}
-	var ret2 LavaJobsLogs
+	var ret2 JobsLogs
 
 	err := c.con.Call("scheduler.jobs.logs", id, &ret)
 	if err != nil {

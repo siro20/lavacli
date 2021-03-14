@@ -12,7 +12,7 @@ type listIdentityCmd struct {
 }
 
 func (c *listIdentityCmd) Run(ctx *context) error {
-	ids, err := lava.LavaIdentitiesList()
+	ids, err := lava.IdentitiesList()
 	if err != nil {
 		return err
 	}
@@ -32,14 +32,14 @@ type addIdentityCmd struct {
 
 func (c *addIdentityCmd) Run(ctx *context) error {
 
-	var i lava.LavaIndentity
+	var i lava.Indentity
 	i.Name = c.Username
-	i.Uri = c.URI
+	i.URI = c.URI
 	i.Token = c.Token
 	i.Username = c.Username
 	i.Proxy = c.Proxy
 
-	return lava.LavaIdentitiesAdd(i)
+	return lava.IdentitiesAdd(i)
 }
 
 type showIdentityCmd struct {
@@ -47,7 +47,7 @@ type showIdentityCmd struct {
 }
 
 func (c *showIdentityCmd) Run(ctx *context) error {
-	v, err := lava.LavaIdentitiesShow(c.ID)
+	v, err := lava.IdentitiesShow(c.ID)
 	if err != nil {
 		return err
 	}
@@ -57,8 +57,8 @@ func (c *showIdentityCmd) Run(ctx *context) error {
 	if v.Token != "" {
 		fmt.Printf("token: %s\n", v.Token)
 	}
-	if v.Uri != "" {
-		fmt.Printf("uri: %s\n", v.Uri)
+	if v.URI != "" {
+		fmt.Printf("uri: %s\n", v.URI)
 	}
 	if v.Username != "" {
 		fmt.Printf("username: %s\n", v.Username)
@@ -71,7 +71,7 @@ type deleteIdentityCmd struct {
 }
 
 func (c *deleteIdentityCmd) Run(ctx *context) error {
-	configs, err := lava.LavaGetConf()
+	configs, err := lava.GetConf()
 
 	if err != nil {
 		return err
@@ -86,7 +86,7 @@ func (c *deleteIdentityCmd) Run(ctx *context) error {
 	if !found {
 		return fmt.Errorf("Identity not found")
 	}
-	return lava.LavaIdentitiesDelete(c.ID)
+	return lava.IdentitiesDelete(c.ID)
 }
 
 type identityCmd struct {
