@@ -4,77 +4,32 @@ package main
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"strings"
 
-	"github.com/siro20/lavacli/pkg/lava"
 	"gopkg.in/yaml.v2"
 )
 
-type devicesTypesList struct {
+type listDeviceTypesCmd struct {
+	Yaml bool `flag:"" optional:"" help:"Output as YAML" default:"false"`
+	JSON bool `flag:"" optional:"" help:"Output as JSON" default:"false"`
+	All  bool `flag:"" optional:"" help:"Show all types" default:"false"`
 }
 
-func (l devicesTypesList) GetParser() *flag.FlagSet {
-	var yaml bool
-	var json bool
-	var all bool
-
-	mySet := flag.NewFlagSet("", flag.ExitOnError)
-	mySet.BoolVar(&yaml, "yaml", false, "print as yaml")
-	mySet.BoolVar(&json, "json", false, "print as json")
-	mySet.BoolVar(&all, "all", false, "Show all types")
-
-	return mySet
-}
-
-func (l devicesTypesList) Help(processedArgs []string, args []string) string {
-	mySet := l.GetParser()
-	s := ""
-	mySet.VisitAll(func(f *flag.Flag) {
-		s += "[--" + f.Name + " " + f.Usage + "] "
-	})
-	return MakeHelp(nil, processedArgs, args, s)
-}
-
-func (l devicesTypesList) ValidateArgs(processedArgs []string, args []string) bool {
-	if len(args) > 2 {
-		return false
-	}
-	if CheckHelp(args) {
-		return false
-	}
-	mySet := l.GetParser()
-	mySet.Parse(args)
-
-	if len(mySet.Args()) > 0 {
-		return false
-	}
-	return true
-}
-
-func (l devicesTypesList) Exec(con *lava.LavaConnection, processedArgs []string, args []string) error {
-
-	mySet := l.GetParser()
-	mySet.Parse(args)
-
-	isYaml := mySet.Lookup("yaml")
-	isJson := mySet.Lookup("json")
-	showAll := mySet.Lookup("all")
-
-	ret, err := con.LavaDevicesTypesList(showAll != nil && showAll.Value.String() == "true")
+func (c *listDeviceTypesCmd) Run(ctx *context) error {
+	ret, err := ctx.Con.LavaDevicesTypesList(c.All)
 	if err != nil {
 		return err
 	}
 
-	if isYaml != nil && isYaml.Value.String() == "true" {
+	if c.Yaml {
 		d, err := yaml.Marshal(&ret)
 		if err != nil {
 			return err
 		}
 		fmt.Println(string(d))
-	} else if isJson != nil && isJson.Value.String() == "true" {
+	} else if c.JSON {
 		d, err := json.Marshal(&ret)
 		if err != nil {
 			return err
@@ -90,50 +45,13 @@ func (l devicesTypesList) Exec(con *lava.LavaConnection, processedArgs []string,
 	return nil
 }
 
-type devicesTypesGet struct {
+type getTemplateCmd struct {
+	Name string `arg:"" required:"" help:"Name of the template."`
 }
 
-func (l devicesTypesGet) GetParser() *flag.FlagSet {
+func (c *getTemplateCmd) Run(ctx *context) error {
 
-	mySet := flag.NewFlagSet("", flag.ExitOnError)
-
-	return mySet
-}
-
-func (l devicesTypesGet) Help(processedArgs []string, args []string) string {
-	mySet := l.GetParser()
-	s := "<name> "
-
-	mySet.VisitAll(func(f *flag.Flag) {
-		s += "[--" + f.Name + " " + f.Usage + "] "
-	})
-	return MakeHelp(nil, processedArgs, args, s)
-}
-
-func (l devicesTypesGet) ValidateArgs(processedArgs []string, args []string) bool {
-	if len(args) != 1 {
-		return false
-	}
-	if CheckHelp(args) {
-		return false
-	}
-	mySet := l.GetParser()
-	mySet.Parse(args)
-
-	if len(mySet.Args()) != 1 {
-		return false
-	}
-	return true
-}
-
-func (l devicesTypesGet) Exec(con *lava.LavaConnection, processedArgs []string, args []string) error {
-
-	mySet := l.GetParser()
-	mySet.Parse(args)
-
-	name := mySet.Args()[0]
-
-	ret, err := con.LavaDevicesTypesTemplateGet(name)
+	ret, err := ctx.Con.LavaDevicesTypesTemplateGet(c.Name)
 	if err != nil {
 		return err
 	}
@@ -143,109 +61,32 @@ func (l devicesTypesGet) Exec(con *lava.LavaConnection, processedArgs []string, 
 	return nil
 }
 
-type devicesTypesSet struct {
+type setTemplateCmd struct {
+	Name     string `arg:"" required:"" help:"Name of the template."`
+	Filename string `arg:"" required:"" help:"Local filename of the template."`
 }
 
-func (l devicesTypesSet) GetParser() *flag.FlagSet {
-
-	mySet := flag.NewFlagSet("", flag.ExitOnError)
-
-	return mySet
-}
-
-func (l devicesTypesSet) Help(processedArgs []string, args []string) string {
-	mySet := l.GetParser()
-	s := "<name> <template>"
-
-	mySet.VisitAll(func(f *flag.Flag) {
-		s += "[--" + f.Name + " " + f.Usage + "] "
-	})
-	return MakeHelp(nil, processedArgs, args, s)
-}
-
-func (l devicesTypesSet) ValidateArgs(processedArgs []string, args []string) bool {
-	if len(args) != 2 {
-		return false
-	}
-	if CheckHelp(args) {
-		return false
-	}
-	mySet := l.GetParser()
-	mySet.Parse(args)
-
-	if len(mySet.Args()) != 2 {
-		return false
-	}
-	return true
-}
-
-func (l devicesTypesSet) Exec(con *lava.LavaConnection, processedArgs []string, args []string) error {
-
-	mySet := l.GetParser()
-	mySet.Parse(args)
-
-	name := mySet.Args()[0]
-	template := mySet.Args()[1]
-
-	templateFile, err := ioutil.ReadFile(template)
-	if err != nil && !strings.HasSuffix(template, ".yaml") {
-		templateFile, err = ioutil.ReadFile(template + ".yaml")
+func (c *setTemplateCmd) Run(ctx *context) error {
+	templateFile, err := ioutil.ReadFile(c.Filename)
+	if err != nil && !strings.HasSuffix(c.Filename, ".yaml") {
+		templateFile, err = ioutil.ReadFile(c.Filename + ".yaml")
 		if err != nil {
 			return fmt.Errorf("Failed to read file: #%v ", err)
 		}
 	}
 
-	err = con.LavaDevicesTypesTemplateSet(name, string(templateFile))
+	err = ctx.Con.LavaDevicesTypesTemplateSet(c.Name, string(templateFile))
 
 	return err
 }
 
-//
-
-type healthCheckGet struct {
+type getHealthCheckCmd struct {
+	Name string `arg:"" required:"" help:"Name of the health-check."`
 }
 
-func (l healthCheckGet) GetParser() *flag.FlagSet {
+func (c *getHealthCheckCmd) Run(ctx *context) error {
 
-	mySet := flag.NewFlagSet("", flag.ExitOnError)
-
-	return mySet
-}
-
-func (l healthCheckGet) Help(processedArgs []string, args []string) string {
-	mySet := l.GetParser()
-	s := "<name> "
-
-	mySet.VisitAll(func(f *flag.Flag) {
-		s += "[--" + f.Name + " " + f.Usage + "] "
-	})
-	return MakeHelp(nil, processedArgs, args, s)
-}
-
-func (l healthCheckGet) ValidateArgs(processedArgs []string, args []string) bool {
-	if len(args) != 1 {
-		return false
-	}
-	if CheckHelp(args) {
-		return false
-	}
-	mySet := l.GetParser()
-	mySet.Parse(args)
-
-	if len(mySet.Args()) != 1 {
-		return false
-	}
-	return true
-}
-
-func (l healthCheckGet) Exec(con *lava.LavaConnection, processedArgs []string, args []string) error {
-
-	mySet := l.GetParser()
-	mySet.Parse(args)
-
-	name := mySet.Args()[0]
-
-	ret, err := con.LavaDevicesTypesHealthCheckGet(name)
+	ret, err := ctx.Con.LavaDevicesTypesHealthCheckGet(c.Name)
 	if err != nil {
 		return err
 	}
@@ -255,81 +96,37 @@ func (l healthCheckGet) Exec(con *lava.LavaConnection, processedArgs []string, a
 	return nil
 }
 
-type healthCheckSet struct {
+type setHealthCheckCmd struct {
+	Name     string `arg:"" required:"" help:"Name of the health-check."`
+	Filename string `arg:"" required:"" help:"Local filename of the health-check."`
 }
 
-func (l healthCheckSet) GetParser() *flag.FlagSet {
-
-	mySet := flag.NewFlagSet("", flag.ExitOnError)
-
-	return mySet
-}
-
-func (l healthCheckSet) Help(processedArgs []string, args []string) string {
-	mySet := l.GetParser()
-	s := "<name> <healthcheck>"
-
-	mySet.VisitAll(func(f *flag.Flag) {
-		s += "[--" + f.Name + " " + f.Usage + "] "
-	})
-	return MakeHelp(nil, processedArgs, args, s)
-}
-
-func (l healthCheckSet) ValidateArgs(processedArgs []string, args []string) bool {
-	if len(args) != 2 {
-		return false
-	}
-	if CheckHelp(args) {
-		return false
-	}
-	mySet := l.GetParser()
-	mySet.Parse(args)
-
-	if len(mySet.Args()) != 2 {
-		return false
-	}
-	return true
-}
-
-func (l healthCheckSet) Exec(con *lava.LavaConnection, processedArgs []string, args []string) error {
-
-	mySet := l.GetParser()
-	mySet.Parse(args)
-
-	name := mySet.Args()[0]
-	template := mySet.Args()[1]
-
-	templateFile, err := ioutil.ReadFile(template)
-	if err != nil && !strings.HasSuffix(template, ".yaml") {
-		templateFile, err = ioutil.ReadFile(template + ".yaml")
+func (c *setHealthCheckCmd) Run(ctx *context) error {
+	healthFile, err := ioutil.ReadFile(c.Filename)
+	if err != nil && !strings.HasSuffix(c.Filename, ".yaml") {
+		healthFile, err = ioutil.ReadFile(c.Filename + ".yaml")
 		if err != nil {
 			return fmt.Errorf("Failed to read file: #%v ", err)
 		}
 	}
 
-	err = con.LavaDevicesTypesHealthCheckSet(name, string(templateFile))
+	err = ctx.Con.LavaDevicesTypesHealthCheckSet(c.Name, string(healthFile))
 
 	return err
 }
 
-var templates group = group{
-	map[string]command{
-		"get": devicesTypesGet{},
-		"set": devicesTypesSet{},
-	},
+type templateCmd struct {
+	Get getTemplateCmd `cmd:"" help:"Get (download) a template from the server."`
+	Set setTemplateCmd `cmd:"" help:"Set (upload) a template to the server."`
 }
 
-var healthCheck group = group{
-	map[string]command{
-		"get": healthCheckGet{},
-		"set": healthCheckSet{},
-	},
+type healthCheckCmd struct {
+	Get getHealthCheckCmd `cmd:"" help:"Get (download) a health-check from the server."`
+	Set setHealthCheckCmd `cmd:"" help:"Set (upload) a health-check to the server."`
 }
 
-var t group = group{
-	map[string]command{
-		"list":         devicesTypesList{},
-		"template":     templates,
-		"health-check": healthCheck,
-	},
+type deviceTypesCmd struct {
+	List        listDeviceTypesCmd `cmd:"" help:"Lists device types"`
+	Template    templateCmd        `cmd:"" help:"Handle device templates"`
+	HealthCheck healthCheckCmd     `cmd:"" help:"Handle health checks"`
 }

@@ -3,27 +3,15 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 
 	"github.com/siro20/lavacli/pkg/lava"
 )
 
-type list struct {
+type listIdentityCmd struct {
 }
 
-func (l list) Help(processedArgs []string, args []string) string {
-	return MakeHelp(nil, processedArgs, args, "")
-}
-
-func (l list) ValidateArgs(processedArgs []string, args []string) bool {
-	if len(args) != 0 {
-		return false
-	}
-	return true
-}
-
-func (l list) Exec(unused *lava.LavaConnection, processedArgs []string, args []string) error {
+func (c *listIdentityCmd) Run(ctx *context) error {
 	ids, err := lava.LavaIdentitiesList()
 	if err != nil {
 		return err
@@ -35,116 +23,31 @@ func (l list) Exec(unused *lava.LavaConnection, processedArgs []string, args []s
 	return nil
 }
 
-type add struct {
+type addIdentityCmd struct {
+	URI      string `arg:"" required:"" help:"The URI of the RPC XML interface."`
+	Token    string `arg:"" required:"" help:"The authentication token of the user."`
+	Username string `arg:"" required:"" help:"The user to authenticate with."`
+	Proxy    string `arg:"" optional:"" help:"The proxy URI."`
 }
 
-func (a add) GetParser() *flag.FlagSet {
-	var uri string
-	var token string
-	var username string
-	var proxy string
-
-	mySet := flag.NewFlagSet("", flag.ExitOnError)
-	mySet.StringVar(&uri, "uri", "", "URI")
-	mySet.StringVar(&token, "token", "", "TOKEN")
-	mySet.StringVar(&username, "username", "", "USERNAME")
-	mySet.StringVar(&proxy, "proxy", "", "PROXY")
-
-	return mySet
-}
-
-func (a add) Help(processedArgs []string, args []string) string {
-	mySet := a.GetParser()
-	s := ""
-	mySet.VisitAll(func(f *flag.Flag) {
-		if f.Name != "uri" {
-			s += "[--" + f.Name + " " + f.Usage + "] "
-		} else {
-			s += "--" + f.Name + " " + f.Usage + " "
-		}
-	})
-	s += " <id>"
-	return MakeHelp(nil, processedArgs, args, s)
-}
-
-func (a add) ValidateArgs(processedArgs []string, args []string) bool {
-	if len(args) < 3 {
-		return false
-	}
-	mySet := a.GetParser()
-	mySet.Parse(args)
-
-	if len(mySet.Args()) != 1 {
-		return false
-	}
-
-	return true
-}
-
-func (a add) Exec(unused *lava.LavaConnection, processedArgs []string, args []string) error {
-	mySet := a.GetParser()
-	mySet.Parse(args)
-
-	if len(mySet.Args()) != 1 {
-		return fmt.Errorf("%s", a.Help(processedArgs, args))
-	}
-	id := mySet.Args()[0]
-
-	uri := mySet.Lookup("uri")
-	token := mySet.Lookup("token")
-	username := mySet.Lookup("username")
-	proxy := mySet.Lookup("proxy")
-
-	if uri == nil {
-		return fmt.Errorf("Must specify URI")
-	}
+func (c *addIdentityCmd) Run(ctx *context) error {
 
 	var i lava.LavaIndentity
-	i.Name = id
-	i.Uri = uri.Value.String()
-	if token != nil {
-		i.Token = token.Value.String()
-	}
-	if username != nil {
-		i.Username = username.Value.String()
-	}
-	if proxy != nil {
-		i.Proxy = proxy.Value.String()
-	}
+	i.Name = c.Username
+	i.Uri = c.URI
+	i.Token = c.Token
+	i.Username = c.Username
+	i.Proxy = c.Proxy
 
 	return lava.LavaIdentitiesAdd(i)
 }
 
-type show struct {
+type showIdentityCmd struct {
+	ID string `arg:"" required:"" help:"The identity to show."`
 }
 
-func (s show) Help(processedArgs []string, args []string) string {
-	return MakeHelp(nil, processedArgs, args, "<id>")
-}
-
-func (s show) ValidateArgs(processedArgs []string, args []string) bool {
-	if len(args) != 1 {
-		return false
-	}
-
-	id := args[0]
-
-	configs, err := lava.LavaGetConf()
-	if err != nil {
-		for k, _ := range configs {
-			if k == id {
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
-func (s show) Exec(unused *lava.LavaConnection, processedArgs []string, args []string) error {
-	id := args[0]
-
-	v, err := lava.LavaIdentitiesShow(id)
+func (c *showIdentityCmd) Run(ctx *context) error {
+	v, err := lava.LavaIdentitiesShow(c.ID)
 	if err != nil {
 		return err
 	}
@@ -163,44 +66,32 @@ func (s show) Exec(unused *lava.LavaConnection, processedArgs []string, args []s
 	return nil
 }
 
-type del struct {
+type deleteIdentityCmd struct {
+	ID string `arg:"" required:"" help:"The identity to delete."`
 }
 
-func (d del) Help(processedArgs []string, args []string) string {
-	return MakeHelp(nil, processedArgs, args, "<id>")
-}
-
-func (d del) ValidateArgs(processedArgs []string, args []string) bool {
-	if len(args) != 1 {
-		return false
-	}
-
-	id := args[0]
-
+func (c *deleteIdentityCmd) Run(ctx *context) error {
 	configs, err := lava.LavaGetConf()
 
 	if err != nil {
-		for k, _ := range configs {
-			if k == id {
-				return true
-			}
+		return err
+	}
+	found := false
+	for k := range configs {
+		if k == c.ID {
+			found = true
+			break
 		}
 	}
-
-	return false
+	if !found {
+		return fmt.Errorf("Identity not found")
+	}
+	return lava.LavaIdentitiesDelete(c.ID)
 }
 
-func (d del) Exec(unused *lava.LavaConnection, processedArgs []string, args []string) error {
-	id := args[0]
-
-	return lava.LavaIdentitiesDelete(id)
-}
-
-var i group = group{
-	map[string]command{
-		"add":    add{},
-		"delete": del{},
-		"show":   show{},
-		"list":   list{},
-	},
+type identityCmd struct {
+	List   listIdentityCmd   `cmd:"" help:"Lists identities"`
+	Add    addIdentityCmd    `cmd:"" help:"Add an identitiy"`
+	Show   showIdentityCmd   `cmd:"" help:"Show an identitiy"`
+	Delete deleteIdentityCmd `cmd:"" help:"Delete an identitiy"`
 }

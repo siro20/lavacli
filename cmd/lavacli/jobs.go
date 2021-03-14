@@ -4,177 +4,71 @@ package main
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
-	"strconv"
-
-	"github.com/siro20/lavacli/pkg/lava"
 
 	"gopkg.in/yaml.v2"
 )
 
-type jobsList struct {
+type listJobsCmd struct {
+	YAML   bool   `flag:"" optional:"" help:"Print as YAML" default:false`
+	JSON   bool   `flag:"" optional:"" help:"Print as JSON" default:false`
+	State  string `flag:"" optional:"" help:"[SUBMITTED, SCHEDULING, SCHEDULED, RUNNING, CANCELING, FINISHED]"`
+	Health string `flag:"" optional:"" help:"[UNKNOWN, COMPLETE, INCOMPLETE, CANCELED]"`
+	Start  int    `flag:"" optional:"" help:"Start at offset" default:0`
+	Limit  int    `flag:"" optional:"" help:"Limit to #count jobs" default:25`
 }
 
-func (l jobsList) GetParser() *flag.FlagSet {
-	var yaml bool
-	var json bool
-	var state string
-	var health string
-	var start int
-	var limit int
+func (c *listJobsCmd) Run(ctx *context) error {
 
-	mySet := flag.NewFlagSet("", flag.ExitOnError)
-	mySet.BoolVar(&yaml, "yaml", false, "print as yaml")
-	mySet.BoolVar(&json, "json", false, "print as json")
-	mySet.StringVar(&state, "state", "", "[SUBMITTED, SCHEDULING, SCHEDULED, RUNNING, CANCELING, FINISHED]")
-	mySet.StringVar(&health, "health", "", "[UNKNOWN, COMPLETE, INCOMPLETE, CANCELED]")
-	mySet.IntVar(&start, "start", 0, "Start at offset")
-	mySet.IntVar(&limit, "limit", 25, "Limit to #count jobs")
-
-	return mySet
-}
-
-func (l jobsList) Help(processedArgs []string, args []string) string {
-	mySet := l.GetParser()
-	s := ""
-	mySet.VisitAll(func(f *flag.Flag) {
-		s += "[--" + f.Name + " " + f.Usage + "] "
-	})
-	return MakeHelp(nil, processedArgs, args, s)
-}
-
-func (l jobsList) ValidateArgs(processedArgs []string, args []string) bool {
-	if len(args) > 5 {
-		return false
-	}
-	if CheckHelp(args) {
-		return false
-	}
-	mySet := l.GetParser()
-	mySet.Parse(args)
-
-	if len(mySet.Args()) > 0 {
-		return false
-	}
-	return true
-}
-
-func (l jobsList) Exec(con *lava.LavaConnection, processedArgs []string, args []string) error {
-
-	mySet := l.GetParser()
-	mySet.Parse(args)
-
-	state := mySet.Lookup("state")
-	health := mySet.Lookup("health")
-
-	start, err := strconv.Atoi(mySet.Lookup("start").Value.String())
+	ret, err := ctx.Con.LavaJobsList(c.State,
+		c.Health, c.Start, c.Limit)
 	if err != nil {
 		return err
 	}
 
-	limit, err := strconv.Atoi(mySet.Lookup("limit").Value.String())
-	if err != nil {
-		return err
-	}
-
-	ret, err := con.LavaJobsList(state.Value.String(),
-		health.Value.String(), start, limit)
-	if err != nil {
-		return err
-	}
-
-	isYaml := mySet.Lookup("yaml")
-	isJson := mySet.Lookup("json")
-
-	if isYaml != nil && isYaml.Value.String() == "true" {
+	if c.YAML {
 		d, err := yaml.Marshal(&ret)
 		if err != nil {
 			return err
 		}
 		fmt.Println(string(d))
-	} else if isJson != nil && isJson.Value.String() == "true" {
+	} else if c.JSON {
 		d, err := json.Marshal(&ret)
 		if err != nil {
 			return err
 		}
 		fmt.Println(string(d))
 	} else {
-		fmt.Printf("Jobs (from %d to %d):\n", start+1, limit)
+		fmt.Printf("Jobs (from %d to %d):\n", c.Start+1, c.Limit)
 		for _, v := range ret {
 			fmt.Printf("* %d: %s,%s [%s] (%s) - %s\n", v.ID, v.State, v.Health, v.Submitter, v.Description, v.DeviceType)
 		}
 	}
-
 	return nil
 }
 
-type jobsShow struct {
+type showJobCmd struct {
+	YAML bool `flag:"" optional:"" help:"Print as YAML" default:false`
+	JSON bool `flag:"" optional:"" help:"Print as JSON" default:false`
+	ID   int  `arg:"" required:"" help:"Job ID"`
 }
 
-func (j jobsShow) GetParser() *flag.FlagSet {
-	var yaml bool
-	var json bool
+func (c *showJobCmd) Run(ctx *context) error {
 
-	mySet := flag.NewFlagSet("", flag.ExitOnError)
-	mySet.BoolVar(&yaml, "yaml", false, "print as yaml")
-	mySet.BoolVar(&json, "json", false, "print as json")
-
-	return mySet
-}
-
-func (j jobsShow) Help(processedArgs []string, args []string) string {
-	mySet := j.GetParser()
-	s := ""
-	mySet.VisitAll(func(f *flag.Flag) {
-		s += "[--" + f.Name + " " + f.Usage + "] "
-	})
-	s += "<devicename> "
-	return MakeHelp(nil, processedArgs, args, s)
-}
-
-func (j jobsShow) ValidateArgs(processedArgs []string, args []string) bool {
-	if len(args) > 2 {
-		return false
-	}
-	if CheckHelp(args) {
-		return false
-	}
-	mySet := j.GetParser()
-	mySet.Parse(args)
-
-	if len(mySet.Args()) != 1 {
-		return false
-	}
-	return true
-}
-
-func (j jobsShow) Exec(con *lava.LavaConnection, processedArgs []string, args []string) error {
-
-	mySet := j.GetParser()
-	mySet.Parse(args)
-
-	id, err := strconv.Atoi(mySet.Args()[0])
-	if err != nil {
-		return err
-	}
-	ret, err := con.LavaJobsShow(id)
+	ret, err := ctx.Con.LavaJobsShow(c.ID)
 	if err != nil {
 		return err
 	}
 
-	isYaml := mySet.Lookup("yaml")
-	isJson := mySet.Lookup("json")
-
-	if isYaml != nil && isYaml.Value.String() == "true" {
+	if c.YAML {
 		d, err := yaml.Marshal(&ret)
 		if err != nil {
 			return err
 		}
 		fmt.Println(string(d))
-	} else if isJson != nil && isJson.Value.String() == "true" {
+	} else if c.JSON {
 		d, err := json.Marshal(&ret)
 		if err != nil {
 			return err
@@ -200,85 +94,28 @@ func (j jobsShow) Exec(con *lava.LavaConnection, processedArgs []string, args []
 	return nil
 }
 
-type jobsDefinition struct {
+type definitionJobCmd struct {
+	ID int `arg:"" required:"" help:"Job ID"`
 }
 
-func (j jobsDefinition) Help(processedArgs []string, args []string) string {
-	return MakeHelp(nil, processedArgs, args, "<id>")
-}
+func (c *definitionJobCmd) Run(ctx *context) error {
 
-func (j jobsDefinition) ValidateArgs(processedArgs []string, args []string) bool {
-	if len(args) != 1 {
-		return false
-	}
-	if CheckHelp(args) {
-		return false
-	}
-	return true
-}
-
-func (j jobsDefinition) Exec(con *lava.LavaConnection, processedArgs []string, args []string) error {
-
-	id, err := strconv.Atoi(args[0])
-	if err != nil {
-		return err
-	}
-	ret, err := con.LavaJobsDefinition(id)
+	ret, err := ctx.Con.LavaJobsDefinition(c.ID)
 	if err != nil {
 		return err
 	}
 
 	fmt.Println(ret)
-
 	return nil
 }
 
-type jobsValidate struct {
+type validateJobCmd struct {
+	Filename string `arg:"" required:"" help:"File path to local job definition file"`
+	Strict   bool   `flag:"" optional:"" help:"Strict mode"`
 }
 
-func (j jobsValidate) GetParser() *flag.FlagSet {
-	var strict bool
-
-	mySet := flag.NewFlagSet("", flag.ExitOnError)
-	mySet.BoolVar(&strict, "strict", false, "strict mode")
-
-	return mySet
-}
-
-func (j jobsValidate) Help(processedArgs []string, args []string) string {
-	mySet := j.GetParser()
-	s := ""
-	mySet.VisitAll(func(f *flag.Flag) {
-		s += "[--" + f.Name + " " + f.Usage + "] "
-	})
-	s += "<definition file> "
-	return MakeHelp(nil, processedArgs, args, s)
-}
-
-func (j jobsValidate) ValidateArgs(processedArgs []string, args []string) bool {
-	if len(args) != 1 {
-		return false
-	}
-	if CheckHelp(args) {
-		return false
-	}
-	mySet := j.GetParser()
-	mySet.Parse(args)
-
-	if len(mySet.Args()) != 1 {
-		return false
-	}
-	return true
-}
-
-func (j jobsValidate) Exec(con *lava.LavaConnection, processedArgs []string, args []string) error {
-
-	mySet := j.GetParser()
-	mySet.Parse(args)
-
-	isStrict := mySet.Lookup("strict")
-
-	path, err := filepath.Abs(mySet.Args()[0])
+func (c *validateJobCmd) Run(ctx *context) error {
+	path, err := filepath.Abs(c.Filename)
 	if err != nil {
 		return fmt.Errorf("Failed to resolv path: #%v ", err)
 	}
@@ -287,8 +124,7 @@ func (j jobsValidate) Exec(con *lava.LavaConnection, processedArgs []string, arg
 		return fmt.Errorf("Failed to read file: #%v ", err)
 	}
 
-	ret, err := con.LavaJobsValidate(string(yamlFile),
-		isStrict != nil && isStrict.Value.String() == "true")
+	ret, err := ctx.Con.LavaJobsValidate(string(yamlFile), c.Strict)
 	if err != nil {
 		return err
 	}
@@ -300,26 +136,12 @@ func (j jobsValidate) Exec(con *lava.LavaConnection, processedArgs []string, arg
 	return nil
 }
 
-type jobsSubmit struct {
+type submitJobCmd struct {
+	Filename string `arg:"" required:"" help:"File path to local job definition file"`
 }
 
-func (j jobsSubmit) Help(processedArgs []string, args []string) string {
-	return MakeHelp(nil, processedArgs, args, "<definition>")
-}
-
-func (j jobsSubmit) ValidateArgs(processedArgs []string, args []string) bool {
-	if len(args) != 1 {
-		return false
-	}
-	if CheckHelp(args) {
-		return false
-	}
-	return true
-}
-
-func (j jobsSubmit) Exec(con *lava.LavaConnection, processedArgs []string, args []string) error {
-
-	path, err := filepath.Abs(args[0])
+func (c *submitJobCmd) Run(ctx *context) error {
+	path, err := filepath.Abs(c.Filename)
 	if err != nil {
 		return fmt.Errorf("Failed to resolv path: #%v ", err)
 	}
@@ -328,136 +150,41 @@ func (j jobsSubmit) Exec(con *lava.LavaConnection, processedArgs []string, args 
 		return fmt.Errorf("Failed to read file: #%v ", err)
 	}
 
-	ret, err := con.LavaJobsSubmit(string(yamlFile))
+	ret, err := ctx.Con.LavaJobsSubmit(string(yamlFile))
 	if err != nil {
 		return err
 	}
 
 	fmt.Println(ret)
-
 	return nil
 }
 
-type jobsCancel struct {
+type cancelJobCmd struct {
+	ID int `arg:"" required:"" help:"Job ID"`
 }
 
-func (j jobsCancel) Help(processedArgs []string, args []string) string {
-	return MakeHelp(nil, processedArgs, args, "<id>")
+func (c *cancelJobCmd) Run(ctx *context) error {
+	return ctx.Con.LavaJobsCancel(c.ID)
 }
 
-func (j jobsCancel) ValidateArgs(processedArgs []string, args []string) bool {
-	if len(args) != 1 {
-		return false
-	}
-	if CheckHelp(args) {
-		return false
-	}
-	return true
+type logsJobCmd struct {
+	ID  int  `arg:"" required:"" help:"Job ID"`
+	Raw bool `flag:"" optional:"" help:"Print log in raw mode"`
 }
 
-func (j jobsCancel) Exec(con *lava.LavaConnection, processedArgs []string, args []string) error {
+func (c *logsJobCmd) Run(ctx *context) error {
+	var Reset = "\033[0m"
+	var Red = "\033[31m"
+	var Green = "\033[32m"
+	var Yellow = "\033[33m"
+	var Blue = "\033[34m"
+	var Gray = "\033[37m"
 
-	id, err := strconv.Atoi(args[0])
+	ret, err := ctx.Con.LavaJobsLogs(c.ID, c.Raw)
 	if err != nil {
 		return err
 	}
-	err = con.LavaJobsCancel(id)
-
-	return err
-}
-
-type jobsFail struct {
-}
-
-func (j jobsFail) Help(processedArgs []string, args []string) string {
-	return MakeHelp(nil, processedArgs, args, "<id>")
-}
-
-func (j jobsFail) ValidateArgs(processedArgs []string, args []string) bool {
-	if len(args) != 1 {
-		return false
-	}
-	if CheckHelp(args) {
-		return false
-	}
-	return true
-}
-
-func (j jobsFail) Exec(con *lava.LavaConnection, processedArgs []string, args []string) error {
-
-	id, err := strconv.Atoi(args[0])
-	if err != nil {
-		return err
-	}
-	err = con.LavaJobsFail(id)
-
-	return err
-}
-
-type jobsLogs struct {
-}
-
-func (j jobsLogs) GetParser() *flag.FlagSet {
-	var raw bool
-
-	mySet := flag.NewFlagSet("", flag.ExitOnError)
-	mySet.BoolVar(&raw, "raw", false, "raw mode")
-
-	return mySet
-}
-
-func (j jobsLogs) Help(processedArgs []string, args []string) string {
-	mySet := j.GetParser()
-	s := ""
-	mySet.VisitAll(func(f *flag.Flag) {
-		s += "[--" + f.Name + " " + f.Usage + "] "
-	})
-	s += "<id> "
-	return MakeHelp(nil, processedArgs, args, s)
-}
-
-func (j jobsLogs) ValidateArgs(processedArgs []string, args []string) bool {
-	if len(args) > 2 {
-		return false
-	}
-	if CheckHelp(args) {
-		return false
-	}
-	mySet := j.GetParser()
-	mySet.Parse(args)
-
-	if len(mySet.Args()) != 1 {
-		return false
-	}
-	return true
-}
-
-var Reset = "\033[0m"
-var Red = "\033[31m"
-var Green = "\033[32m"
-var Yellow = "\033[33m"
-var Blue = "\033[34m"
-var Purple = "\033[35m"
-var Cyan = "\033[36m"
-var Gray = "\033[37m"
-var White = "\033[97m"
-
-func (j jobsLogs) Exec(con *lava.LavaConnection, processedArgs []string, args []string) error {
-
-	mySet := j.GetParser()
-	mySet.Parse(args)
-
-	isRaw := mySet.Lookup("raw")
-	id, err := strconv.Atoi(mySet.Args()[0])
-	if err != nil {
-		return err
-	}
-
-	ret, err := con.LavaJobsLogs(id, isRaw != nil && isRaw.Value.String() == "true")
-	if err != nil {
-		return err
-	}
-	if isRaw != nil && isRaw.Value.String() == "true" {
+	if c.Raw {
 		fmt.Printf("%s\n", ret.Data)
 	} else {
 		for i := range ret.Decoded {
@@ -499,15 +226,12 @@ func (j jobsLogs) Exec(con *lava.LavaConnection, processedArgs []string, args []
 	return nil
 }
 
-var j group = group{
-	map[string]command{
-		"list":       jobsList{},
-		"logs":       jobsLogs{},
-		"show":       jobsShow{},
-		"definition": jobsDefinition{},
-		"validate":   jobsValidate{},
-		"submit":     jobsSubmit{},
-		"cancel":     jobsCancel{},
-		"fail":       jobsFail{},
-	},
+type jobsCmd struct {
+	List       listJobsCmd      `cmd:"" help:"Lists jobs"`
+	Show       showJobCmd       `cmd:"" help:"Show job details"`
+	Definition definitionJobCmd `cmd:"" help:"Handle job definition"`
+	Validate   validateJobCmd   `cmd:"" help:"Validate job definition"`
+	Submit     submitJobCmd     `cmd:"" help:"Submit new job"`
+	Cancel     cancelJobCmd     `cmd:"" help:"Cancel running job"`
+	Logs       logsJobCmd       `cmd:"" help:"Show job log"`
 }

@@ -52,6 +52,7 @@ func LavaConnectByConfigID(identityName string) (*LavaConnection, error) {
 		if k == identityName {
 			c = v
 			found = true
+			break
 		}
 	}
 	if !found {
