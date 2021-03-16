@@ -8,6 +8,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// Result represents data as returned by LAVA XMLRPC results.get_testjob_results_yaml
 type Result []struct {
 	Name         string `yaml:"name,omitempty" json:"name,omitempty"`
 	Result       string `yaml:"result,omitempty" json:"result,omitempty"`
@@ -40,6 +41,7 @@ type Result []struct {
 	} `yaml:"metadata,omitempty" json:"metadata,omitempty"`
 }
 
+// ResultsAsYAML represents data as returned by LAVA XMLRPC results.get_testjob_results_yaml
 func (c Connection) ResultsAsYAML(id int) (string, error) {
 	var ret string
 
@@ -48,6 +50,7 @@ func (c Connection) ResultsAsYAML(id int) (string, error) {
 	return ret, err
 }
 
+// Results represents unmarshaled data as returned by LAVA XMLRPC results.get_testjob_results_yaml
 func (c Connection) Results(id int) (Result, error) {
 	var ret Result
 	yamlStr, err := c.ResultsAsYAML(id)
@@ -59,6 +62,7 @@ func (c Connection) Results(id int) (Result, error) {
 	return ret, nil
 }
 
+// ResultsAsJSON represents data encoded in JSON as returned by LAVA XMLRPC results.get_testjob_results_yaml
 func (c Connection) ResultsAsJSON(id int) (string, error) {
 	results, err := c.Results(id)
 

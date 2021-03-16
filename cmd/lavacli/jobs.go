@@ -150,7 +150,7 @@ func (c *submitJobCmd) Run(ctx *context) error {
 		return fmt.Errorf("Failed to read file: #%v ", err)
 	}
 
-	ret, err := ctx.LavaCon.JobsSubmit(string(yamlFile))
+	ret, err := ctx.LavaCon.JobsSubmitString(string(yamlFile))
 	if err != nil {
 		return err
 	}

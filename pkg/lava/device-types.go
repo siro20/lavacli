@@ -5,10 +5,10 @@ package lava
 import "encoding/base64"
 
 type DeviceTypesListing struct {
-	Devices   int    `xmlrpc:"devices"`
-	Installed bool   `xmlrpc:"installed"`
-	Name      string `xmlrpc:"name"`
-	Template  bool   `xmlrpc:"template"`
+	Devices   int    `xmlrpc:"devices" json:"devices" yaml:"devices"`
+	Installed bool   `xmlrpc:"installed" json:"installed" yaml:"installed"`
+	Name      string `xmlrpc:"name" json:"name" yaml:"name"`
+	Template  bool   `xmlrpc:"template" json:"template" yaml:"template"`
 }
 
 func (c Connection) DevicesTypesList(showAll bool) ([]DeviceTypesListing, error) {

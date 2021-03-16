@@ -23,17 +23,17 @@ func (c Connection) DevicesList() ([]DeviceList, error) {
 }
 
 type Device struct {
-	Description   string   `xmlrpc:"description"`
-	HasDeviceDict bool     `xmlrpc:"has_device_dict"`
-	HealthJob     bool     `xmlrpc:"health_job"`
-	Worker        string   `xmlrpc:"worker"`
-	Tags          []string `xmlrpc:"tags"`
-	Hostname      string   `xmlrpc:"hostname"`
-	DeviceType    string   `xmlrpc:"device_type"`
-	State         string   `xmlrpc:"state"`
-	Health        string   `xmlrpc:"health"`
-	CurrentJob    int      `xmlrpc:"current_job"`
-	Pipeline      bool     `xmlrpc:"pipeline"`
+	Description   string   `xmlrpc:"description" json:"description" yaml:"description"`
+	HasDeviceDict bool     `xmlrpc:"has_device_dict" json:"has_device_dict" yaml:"has_device_dict"`
+	HealthJob     bool     `xmlrpc:"health_job" json:"health_job" yaml:"health_job"`
+	Worker        string   `xmlrpc:"worker" json:"worker" yaml:"worker"`
+	Tags          []string `xmlrpc:"tags" json:"tags" yaml:"tags"`
+	Hostname      string   `xmlrpc:"hostname" json:"hostname" yaml:"hostname"`
+	DeviceType    string   `xmlrpc:"device_type" json:"device_type" yaml:"device_type"`
+	State         string   `xmlrpc:"state" json:"state" yaml:"state"`
+	Health        string   `xmlrpc:"health" json:"health" yaml:"health"`
+	CurrentJob    int      `xmlrpc:"current_job" json:"current_job" yaml:"current_job"`
+	Pipeline      bool     `xmlrpc:"pipeline" json:"pipeline" yaml:"pipeline"`
 }
 
 func (c Connection) DevicesShow(hostname string) (*Device, error) {
