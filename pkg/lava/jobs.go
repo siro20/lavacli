@@ -68,6 +68,23 @@ func (c Connection) JobsShow(id int) (*JobState, error) {
 	return &ret, nil
 }
 
+//NotifyResult represents the job result posted by the server to the notify HTTP URI
+type NotifyResult struct {
+	Metadata       []map[string]string `json:"metadata"`
+	Definition     string              `json:"definition"`
+	ActualDeviceID string              `json:"actual_device_id"`
+	Description    string              `json:"description"`
+	State          int                 `json:"state"`
+	StateString    string              `json:"state_string"`
+	ID             int                 `json:"id"`
+	EndTime        string              `json:"end_time"`
+	SubmitTime     string              `json:"submit_time"`
+	FailureComment string              `json:"failure_comment"`
+	Status         int                 `json:"status"`
+	Results        map[string]string   `json:"results"`
+	HealthCheck    string              `yaml:"health_check"`
+}
+
 //TimeoutStruct represents a timeout in a LAVA job definition
 type TimeoutStruct struct {
 	Seconds int `yaml:"seconds,omitempty"`

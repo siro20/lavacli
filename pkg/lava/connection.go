@@ -60,6 +60,9 @@ func ConnectByConfigID(identityName string, opt ConnectionOptions) (*Connection,
 	if err != nil {
 		return nil, err
 	}
+	if identityName == "" {
+		identityName = "default"
+	}
 	found := false
 	for k, v := range configs {
 		if k == identityName {
