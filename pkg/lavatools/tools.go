@@ -1,7 +1,6 @@
 package lavatools
 
 import (
-
 	"github.com/siro20/lavacli/pkg/lava"
 
 	"time"
@@ -41,43 +40,43 @@ type Timeouts struct {
 
 // JobOptions contain additional settings for the job submission
 type JobOptions struct {
-	Timeout Timeouts
-	Priority string
+	Timeout    Timeouts
+	Priority   string
 	Visibility string
 }
 
 // DefaultJobOptions are to be used as default
 var DefaultJobOptions = JobOptions{
-	Timeout : Timeouts{
-		Job: JobDefaultTimeout,
-		Step: DefaultTimeout,
-		QEMU: QEMUDefaultTimeout,
-		KexecDeploy: DefaultKexecDeployTimeout,
-		HarddiskDeploy:DefaultHarddiskDeployTimeout,
-		FlashDeploy: DefaultFlashDeployTimeout,
+	Timeout: Timeouts{
+		Job:            JobDefaultTimeout,
+		Step:           DefaultTimeout,
+		QEMU:           QEMUDefaultTimeout,
+		KexecDeploy:    DefaultKexecDeployTimeout,
+		HarddiskDeploy: DefaultHarddiskDeployTimeout,
+		FlashDeploy:    DefaultFlashDeployTimeout,
 	},
-	Priority: defaultPriority,
+	Priority:   defaultPriority,
 	Visibility: defaultVisibility,
 }
 
 type tagsCache struct {
 	Timestamp time.Time
-	Tags []string
+	Tags      []string
 }
 
 type deviceCache struct {
 	Timestamp time.Time
-	Device lava.Device
+	Device    lava.Device
 }
 
 type deviceListCache struct {
-	Timestamp time.Time
+	Timestamp  time.Time
 	DeviceList []lava.DeviceList
 }
 
 type deviceTypeTemplateCache struct {
 	Timestamp time.Time
-	Template string
+	Template  string
 }
 
 type Options struct {
@@ -100,23 +99,23 @@ type Options struct {
 }
 
 var DefaultOptions = Options{
-	RetryCount : 5,
-	PollInterval: time.Minute * 5,
-	InvalidTimeout: time.Minute * 10,
+	RetryCount:            5,
+	PollInterval:          time.Minute * 5,
+	InvalidTimeout:        time.Minute * 10,
 	BackgroundPrefetching: true,
-	BackgroundInterval: time.Minute * 5,
+	BackgroundInterval:    time.Minute * 5,
 }
 
 //lt implements the Lavatools interface
 type lt struct {
-	c *lava.Connection
-	pollInterval time.Duration
+	c              *lava.Connection
+	pollInterval   time.Duration
 	invalidTimeout time.Duration
-	retryCount int
+	retryCount     int
 	// Following entries are "cached"
-	deviceList deviceListCache
-	devices map[string]deviceCache
-	deviceTags map[string]tagsCache
+	deviceList         deviceListCache
+	devices            map[string]deviceCache
+	deviceTags         map[string]tagsCache
 	deviceTypeTemplate map[string]deviceTypeTemplateCache
 }
 
@@ -139,10 +138,11 @@ type Lavatools interface {
 	// device-types template
 	DevicesTypesTemplateGetWithRetry(name string) (ret string, err error)
 	// following functions use cached results
-	DeviceListCached() (devList []lava.DeviceList, err error) 
+	DeviceListCached() (devList []lava.DeviceList, err error)
+	DeviceListHealthyCached() (devList []lava.DeviceList, err error)
 	DevicesTypesTemplateGetCached(name string) (ret string, err error)
 	DeviceHasTagCached(name string, tag string, ignoreCase bool) (has bool, err error)
-	DeviceHasTagsCached(name string, tags []string, ignoreCase bool) (has bool, err error) 
+	DeviceHasTagsCached(name string, tags []string, ignoreCase bool) (has bool, err error)
 	DeviceOfTypeIsAliveAndHasTagCached(deviceType string, tagsToMatch []string) (alive bool, err error)
 }
 
@@ -159,14 +159,14 @@ func (con lt) updatePeriodic(timeout time.Duration) {
 
 //NewLavaTools returns an interface to Lavatools
 func NewLavaTools(c *lava.Connection, opt Options) (con Lavatools, err error) {
-	obj := lt {c :c,
-		deviceList: deviceListCache{DeviceList: []lava.DeviceList{}},
-		devices: map[string]deviceCache{},
-		deviceTags : map[string]tagsCache{},
+	obj := lt{c: c,
+		deviceList:         deviceListCache{DeviceList: []lava.DeviceList{}},
+		devices:            map[string]deviceCache{},
+		deviceTags:         map[string]tagsCache{},
 		deviceTypeTemplate: map[string]deviceTypeTemplateCache{},
-		pollInterval: opt.PollInterval,
-		invalidTimeout:opt.InvalidTimeout,
-		retryCount:opt.RetryCount,
+		pollInterval:       opt.PollInterval,
+		invalidTimeout:     opt.InvalidTimeout,
+		retryCount:         opt.RetryCount,
 	}
 
 	if opt.BackgroundPrefetching {

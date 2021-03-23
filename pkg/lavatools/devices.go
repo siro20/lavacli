@@ -1,12 +1,11 @@
 package lavatools
 
 import (
-
-	"github.com/siro20/lavacli/pkg/lava"
-	"time"
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/siro20/lavacli/pkg/lava"
 )
 
 // DeviceListWithRetry returns the device list
@@ -59,7 +58,7 @@ func (con lt) updateDevice(name string) (err error) {
 func (con lt) DevicesShowCached(name string) (dev lava.Device, err error) {
 	var ok bool
 	var d deviceCache
-	
+
 	err = con.updateDevice(name)
 	d, ok = con.devices[name]
 	if !ok {
@@ -88,23 +87,37 @@ func (con *lt) updateDeviceList() (err error) {
 
 //DeviceListCached caches the device list as every API call takes a while
 func (con lt) DeviceListCached() (devList []lava.DeviceList, err error) {
-	
+
 	err = con.updateDeviceList()
 	devList = con.deviceList.DeviceList
+	return
+}
+
+//DeviceListHealthyCached caches the device list of healthy devices as every API call takes a while
+func (con lt) DeviceListHealthyCached() (devList []lava.DeviceList, err error) {
+	devList = []lava.DeviceList{}
+
+	err = con.updateDeviceList()
+	for _, d := range con.deviceList.DeviceList {
+		if strings.ToLower(d.Health) == "good" {
+			devList = append(devList, d)
+		}
+	}
+
 	return
 }
 
 func (con *lt) updateDeviceTagsList(name string) (err error) {
 	var l []string
 	tag, ok := con.deviceTags[name]
-	if !ok || time.Now().Sub(tag.Timestamp) >  con.pollInterval {
-			l, err = con.DevicesTagsListWithRetry(name)
-			if err == nil {
-				con.deviceTags[name] = tagsCache{Tags: l, Timestamp: time.Now()}
-			} else if time.Now().Sub(tag.Timestamp) > con.invalidTimeout {
-				return
-			}
-			err = nil
+	if !ok || time.Now().Sub(tag.Timestamp) > con.pollInterval {
+		l, err = con.DevicesTagsListWithRetry(name)
+		if err == nil {
+			con.deviceTags[name] = tagsCache{Tags: l, Timestamp: time.Now()}
+		} else if time.Now().Sub(tag.Timestamp) > con.invalidTimeout {
+			return
+		}
+		err = nil
 	}
 
 	return
@@ -179,7 +192,7 @@ func (con lt) DeviceIsAliveCached(name string) (alive bool, err error) {
 			return
 		}
 	}
-	
+
 	return
 }
 
@@ -206,11 +219,10 @@ func (con lt) DeviceOfTypeIsAliveAndHasTagCached(deviceType string, tagsToMatch 
 		if !ok {
 			continue
 		}
-		
+
 		alive = true
 		return
 	}
 
 	return
 }
-	
