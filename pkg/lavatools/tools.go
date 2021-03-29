@@ -59,26 +59,6 @@ var DefaultJobOptions = JobOptions{
 	Visibility: defaultVisibility,
 }
 
-type tagsCache struct {
-	Timestamp time.Time
-	Tags      []string
-}
-
-type deviceCache struct {
-	Timestamp time.Time
-	Device    lava.Device
-}
-
-type deviceListCache struct {
-	Timestamp  time.Time
-	DeviceList []lava.DeviceList
-}
-
-type deviceTypeTemplateCache struct {
-	Timestamp time.Time
-	Template  string
-}
-
 type Options struct {
 	//RetryCount is the number of retries done in the *Retry methods
 	//before the error is returned to the caller
@@ -112,11 +92,8 @@ type lt struct {
 	pollInterval   time.Duration
 	invalidTimeout time.Duration
 	retryCount     int
-	// Following entries are "cached"
-	deviceList         deviceListCache
-	devices            map[string]deviceCache
-	deviceTags         map[string]tagsCache
-	deviceTypeTemplate map[string]deviceTypeTemplateCache
+	cache          *cache
+	retry          *retry
 }
 
 type Lavatools interface {
@@ -146,31 +123,24 @@ type Lavatools interface {
 	DeviceOfTypeIsAliveAndHasTagCached(deviceType string, tagsToMatch []string) (alive bool, err error)
 }
 
-func (con lt) updatePeriodic(timeout time.Duration) {
-	time.Sleep(timeout)
-	time.Sleep(1)
-	con.updateDeviceList()
-	for i := range con.deviceList.DeviceList {
-		con.updateDeviceTagsList(con.deviceList.DeviceList[i].Hostname)
-		con.updateDevice(con.deviceList.DeviceList[i].Hostname)
-	}
-	go con.updatePeriodic(timeout)
-}
-
 //NewLavaTools returns an interface to Lavatools
 func NewLavaTools(c *lava.Connection, opt Options) (con Lavatools, err error) {
-	obj := lt{c: c,
-		deviceList:         deviceListCache{DeviceList: []lava.DeviceList{}},
-		devices:            map[string]deviceCache{},
-		deviceTags:         map[string]tagsCache{},
-		deviceTypeTemplate: map[string]deviceTypeTemplateCache{},
-		pollInterval:       opt.PollInterval,
-		invalidTimeout:     opt.InvalidTimeout,
-		retryCount:         opt.RetryCount,
+	retry, err := newLavaToolsRetry(c, opt)
+	if err != nil {
+		return
 	}
 
-	if opt.BackgroundPrefetching {
-		go obj.updatePeriodic(opt.BackgroundInterval)
+	cache, err := newLavaToolsCache(c, retry, opt)
+	if err != nil {
+		return
+	}
+
+	obj := lt{c: c,
+		pollInterval:   opt.PollInterval,
+		invalidTimeout: opt.InvalidTimeout,
+		retryCount:     opt.RetryCount,
+		cache:          cache,
+		retry:          retry,
 	}
 	con = obj
 	return

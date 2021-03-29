@@ -1,9 +1,7 @@
 package lavatools
 
 import (
-	"fmt"
 	"strings"
-	"time"
 
 	"github.com/siro20/lavacli/pkg/lava"
 )
@@ -11,14 +9,8 @@ import (
 // DeviceListWithRetry returns the device list
 // Retries to get the list in case of error
 func (con lt) DeviceListWithRetry() (devList []lava.DeviceList, err error) {
-	for i := 0; i < 5; i++ {
-		devList, err = con.c.DevicesList()
-		if err != nil {
-			time.Sleep(time.Second * 15)
-			continue
-		}
-		break
-	}
+
+	devList, err = con.retry.GetDeviceList()
 
 	return
 }
@@ -26,61 +18,16 @@ func (con lt) DeviceListWithRetry() (devList []lava.DeviceList, err error) {
 //DevicesTagsListWithRetry returns the tags of the device specified by name
 // Retries to get the list in case of error
 func (con lt) DevicesTagsListWithRetry(name string) (ret []string, err error) {
-	for i := 0; i < 5; i++ {
-		ret, err = con.c.DevicesTagsList(name)
-		if err != nil {
-			time.Sleep(time.Second * 15)
-			continue
-		}
-		break
-	}
 
-	return
-}
-
-func (con lt) updateDevice(name string) (err error) {
-	var d *lava.Device
-	dev, ok := con.devices[name]
-	if !ok || time.Now().Sub(dev.Timestamp) > con.pollInterval || len(con.devices) == 0 {
-		d, err = con.c.DevicesShow(name)
-		if err == nil {
-			con.devices[name] = deviceCache{Device: *d, Timestamp: time.Now()}
-		} else if time.Now().Sub(dev.Timestamp) > con.invalidTimeout {
-			return
-		}
-		err = nil
-	}
+	ret, err = con.retry.GetDeviceTagsList(name)
 
 	return
 }
 
 //DevicesShowCached caches the device to show as every API call takes a while
 func (con lt) DevicesShowCached(name string) (dev lava.Device, err error) {
-	var ok bool
-	var d deviceCache
 
-	err = con.updateDevice(name)
-	d, ok = con.devices[name]
-	if !ok {
-		err = fmt.Errorf("%s not found in cache", name)
-	}
-	dev = d.Device
-
-	return
-}
-
-func (con *lt) updateDeviceList() (err error) {
-	var l []lava.DeviceList
-	if time.Now().Sub(con.deviceList.Timestamp) > con.pollInterval || len(con.deviceList.DeviceList) == 0 {
-		l, err = con.DeviceListWithRetry()
-		if err == nil {
-			con.deviceList.Timestamp = time.Now()
-			con.deviceList.DeviceList = l
-		} else if time.Now().Sub(con.deviceList.Timestamp) > con.invalidTimeout {
-			return
-		}
-		err = nil
-	}
+	dev, err = con.cache.GetDevice(name)
 
 	return
 }
@@ -88,36 +35,24 @@ func (con *lt) updateDeviceList() (err error) {
 //DeviceListCached caches the device list as every API call takes a while
 func (con lt) DeviceListCached() (devList []lava.DeviceList, err error) {
 
-	err = con.updateDeviceList()
-	devList = con.deviceList.DeviceList
+	devList, err = con.cache.GetDeviceList()
+
 	return
 }
 
 //DeviceListHealthyCached caches the device list of healthy devices as every API call takes a while
-func (con lt) DeviceListHealthyCached() (devList []lava.DeviceList, err error) {
-	devList = []lava.DeviceList{}
+func (con lt) DeviceListHealthyCached() (devListHealthy []lava.DeviceList, err error) {
+	var devList []lava.DeviceList
+	devListHealthy = []lava.DeviceList{}
 
-	err = con.updateDeviceList()
-	for _, d := range con.deviceList.DeviceList {
-		if strings.ToLower(d.Health) == "good" {
-			devList = append(devList, d)
-		}
+	devList, err = con.cache.GetDeviceList()
+	if err != nil {
+		return
 	}
-
-	return
-}
-
-func (con *lt) updateDeviceTagsList(name string) (err error) {
-	var l []string
-	tag, ok := con.deviceTags[name]
-	if !ok || time.Now().Sub(tag.Timestamp) > con.pollInterval {
-		l, err = con.DevicesTagsListWithRetry(name)
-		if err == nil {
-			con.deviceTags[name] = tagsCache{Tags: l, Timestamp: time.Now()}
-		} else if time.Now().Sub(tag.Timestamp) > con.invalidTimeout {
-			return
+	for _, d := range devList {
+		if strings.ToLower(d.Health) == "good" {
+			devListHealthy = append(devListHealthy, d)
 		}
-		err = nil
 	}
 
 	return
@@ -125,14 +60,8 @@ func (con *lt) updateDeviceTagsList(name string) (err error) {
 
 //DevicesTagsListCached caches the device tags as every API call takes a while
 func (con lt) DevicesTagsListCached(name string) (tags []string, err error) {
-	var ok bool
-	var t tagsCache
-	err = con.updateDeviceTagsList(name)
-	t, ok = con.deviceTags[name]
-	if !ok {
-		err = fmt.Errorf("%s not found in cache", name)
-	}
-	tags = t.Tags
+
+	tags, err = con.cache.GetDeviceTagsList(name)
 
 	return
 }
